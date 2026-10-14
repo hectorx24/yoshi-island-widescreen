@@ -1,24 +1,37 @@
-# Verified state — 2026-10-14
+# Yoshi Island — authoritative handoff (2026-10-14)
 
-- Target: supplied USA v1.1, explicitly authorized. Source ROM remains unchanged.
-- Headerless 2 MiB; region=1, revision=1, checksum/complement valid; calculated checksum matches.
-- SHA-256: bd763c1a56365c244be92e6cffefd318780a2a19eda7d5baf1c6d5bd6c1b3e06.
-- MD5: ce1e3e33b6e39d37b43d7de599f9e785, exact match to Yoshifanatic's USA v1.1 README reference.
-- brunovalads reference targets v1.0 SHA-256 9b4957466798bbdb5b43a450bbb60b2591ae81d95b891430f62d53ca62e8bc7b; do not reuse its ROM addresses blindly.
-- Exact repository/tool revisions: dependencies.json. Upstream checkouts and all ROM-derived output are ignored.
-- Architecture: SNESRecomp generated C + shared SNES/Super FX runtime, beam-aligned frame driver. Current local build has 70 AOT-eligible variants using local/boot-profile.json; a fresh unprofiled generate has 6. Most game code still runs via interpreter fallback. Not a completed static native port.
-- Built Mac ARM64 desktop executable: build/YoshiIsland. SDL3 built locally; incremental cache retained.
-- Verified automated 1382-frame boot replay exited normally; captured and visually inspected Nintendo opening, story, animated title. Super FX trace present. Evidence: local/scenes/, local/scenes.log.
-- Built independent pinned Snes9x libretro oracle and tools/oracle.py. Same input replay runs with video and nonzero audio. Reference framebuffer differences remain unresolved (details in docs/ENGINEERING_NOTES.md).
-- Native promotion exposed stack-dispatch corruption at $008150. force_lle in config/bank00.cfg restores exact baseline framebuffers at all 3 boot checkpoints. tools/regression_boot.py passes on corrected build. Small WRAM/SRAM differences are unresolved; no strict state-equivalence claim.
-- tests/tutorial.script completed 6211 frames; visually verified original tutorial/dialogs, moving Yoshi and scrolling; SRAM player X changed 136 -> 270. Evidence: local/tutorial/. No full-level, jump physics, egg throwing or collision qualification yet.
-- Normal-speed 600-frame SDL disk-audio test exited normally; S16LE stereo 44100 Hz sink produced 9.938 seconds, 348877 nonzero samples, RMS 747.33, peak 11712. Evidence: local/audio/metrics.json and boot.wav. Confirms audio signal, not fidelity or timing qualification. Wall-clock run was 10.619 seconds; do not claim correct pacing yet.
-- ROM intake: 3 unit tests pass. C geometry tests pass for 16:9, 19.5:9, 20:9, 21:9, 2772x1272 and insets. Geometry is not yet integrated into presentation.
-- No true widescreen, background extension, Android APK, full audio qualification, broad gameplay validation, physical controller or lifecycle validation yet.
-- Boss policy: prioritize actual world expansion individually; fixed camera/Super FX do not automatically disqualify encounters. Fallback needs a demonstrated encounter limitation.
-- Installed Rust minimal toolchain and project-local CMake/Ninja venv. Java, Android SDK/NDK absent from usual locations.
-- Build: sh tools/build.sh. Tests: sh tools/test.sh.
-- Rebuild intake: python3 tools/fetch_dependencies.py; sh tools/generate.sh '<ROM>' ['<private coverage JSON>']; sh tools/build.sh. README.md has setup and regression commands.
-- Boot replay: SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy SNESRECOMP_DUMP_DIR="$PWD/local/scenes" build/YoshiIsland --no-launcher --rom '<owner ROM path>' --script "$PWD/tests/boot.script".
-- Environment controls require SNESRECOMP_ prefix (e.g. SNESRECOMP_RUN_FRAMES); plain RUN_FRAMES is ignored.
-- Next: diagnose reference pixel/timing differences and remaining AOT state differences, then qualify tutorial mechanics and native WRAM handling. Investigate game-specific camera/tile streaming/GSU rendering including bosses. Android toolchain/frontend and APK packaging remain entirely unfinished. No different ROM revision is currently required.
+## Working state and decisions
+- Continue this checkout; no re-cloning/research restart. Exact pins: dependencies.json. Technical findings: docs/ENGINEERING_NOTES.md. Commands: README.md.
+- Owner ROM: headerless USA v1.1, 2 MiB; SHA256 bd763c1a56365c244be92e6cffefd318780a2a19eda7d5baf1c6d5bd6c1b3e06; MD5 ce1e3e33b6e39d37b43d7de599f9e785 matches Yoshifanatic v1.1. Source unchanged. brunovalads v1.0 addresses are not interchangeable.
+- SNESRecomp hybrid generated C + shared SNES/Super FX runtime, beam-aligned driver. Current build: 70 AOT variants from local/boot-profile.json; fresh unprofiled: 6. Most CPU code still LLE. No silent emulator substitution.
+- Mac ARM64 build/YoshiIsland boots through story/title and playable opening tutorial. SDL3 cache reused.
+- Android ARM64 libYoshiIsland.so + libSDL3.so build. Private dev APK: local/android/artifacts/yoshi-usa11-arm64-dev.apk. Signature, arm64 ABI, SDL_main export, 16 KiB ELF/ZIP alignment verified. Java wrapper compiles; direct launch, owner ROM asset, immersive landscape/safe cutout policy, standard SDL gamepad path. Device execution/lifecycle/GameSir NOT verified yet.
+- Java17/SDK35 reused from /Users/hectorx24/Downloads/patreon/tooling/{jdk-17.0.20.1+1/Contents/Home,sdk}. NDK r27d 27.3.13750724 copied to local/android-toolchain/ndk; official DMG SHA1 80f11292080fab4e869799f1d23caa88dcf3c709 verified. No mounted DMG needed.
+- True widescreen/background extensions NOT implemented. src/display_geometry.c passes sizing/inset tests, not integrated. Bosses require individual true-widescreen solutions; fixed camera/Super FX alone never justify fallback.
+
+## Verified tests and failures to avoid
+- sh tools/test.sh: ROM intake + geometry and quota parsing pass (6 Python tests plus C cases).
+- python3 tools/regression_boot.py --rom '<ROM>': exact baseline pixels at 600/1200/1382. This is a regression gate, NOT a hardware oracle.
+- tests/tutorial.script: 6211 frames, original dialogs/scrolling, player SRAM X 136 -> 270. Evidence local/tutorial/. Jump/egg/collision/full levels unqualified.
+- Audio: 600 normal-speed frames produce 9.938s nonzero S16LE stereo sink; RMS747.33, peak11712. Wall runtime10.619s. Fidelity/pacing still unqualified. Evidence local/audio/.
+- Independent pinned Snes9x oracle: tools/oracle.py. Serve core option defaults or Super FX gets clock multiplier zero (black/silent). RGB565 green conversion corrected.
+- Native promotion of $008150 stack-built RTL dispatcher corrupts flow. Keep force_lle 008150 in config/bank00.cfg. Corrected 70-AOT build matches baseline pixels; small stack/SRAM state differences remain.
+- WRAM $7EC000..FFFF matches ROM offsets $4000..7FFF (16KiB); capped/unterminated profile snapshots do NOT establish native WRAM recompilation.
+- Targeted reference diagnosis: native/oracle counters equal at frames80..260. First 3-tick divergence occurs in mode5->6 around280..290. At600/1200 pixel differences only logo box(69,64)..(186,100). Native600 pixels exactly match oracle594/595/604; oracle603 counter matches native600. Do not patch graphics to hide phase differences. Evidence local/{native-startup,oracle-startup,native-phase,oracle-phase,oracle-alignment}. Next timing trace: mode5 initialization/GSU jobs. No timing fix claimed.
+
+## Commands and next concrete action
+- Build/test: sh tools/build.sh; sh tools/test.sh; python3 tools/regression_boot.py --rom '<ROM>'.
+- Generate: sh tools/generate.sh '<ROM>' ['<private coverage.json>']; preserve generated/ caches and local/boot-profile.json.
+- APK: python3 tools/build_android.py --rom '<ROM>' (incremental, SDK/JDK/NDK env overrides supported).
+- Replay: SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy SNESRECOMP_DUMP_DIR="$PWD/local/<capture>" build/YoshiIsland --no-launcher --rom '<ROM>' --script "$PWD/tests/tutorial.script".
+- Environment knobs require SNESRECOMP_ prefix; plain RUN_FRAMES is ignored. Hold menu inputs multiple frames; dialogs require input.
+- NEXT: finish headless Android emulator setup currently downloading local/android-toolchain/{emulator.zip,system-image.zip}; verify official hashes (commands in active shell), create local AVD, install/launch private dev APK and inspect logcat/screenshot. No ADB device currently connected. Then lifecycle/save qualification, mode5 timing diagnosis, and genuine camera/streaming/GSU widescreen including bosses.
+- Unfinished: timing/reference equivalence, native WRAM coverage, true widescreen, controller-device tests, durable background saves/lifecycle, broad levels/bosses/transformations and final APK qualification.
+- Handoff workflow: tools/checkpoint.py atomically replaces this footer; build/test/APK/boot gates checkpoint automatically. Agents update substantive facts on discoveries and before ending. No quota polling daemon or guessed percentages; use app get_usage_limits at milestones, checkpoint immediately <=5%.
+
+<!-- checkpoint:begin -->
+## Automatic checkpoint
+- Checked 2026-10-14T22:54:50+00:00; Authoritative handoff compacted; Android emulator downloads in progress
+- Git base at checkpoint: 83f52e0; 11 changed/untracked paths (run git status).
+- Last supported quota observation (2026-10-14T22:54:20+00:00): five_hour: 10% remaining; weekly: 86% remaining.
+<!-- checkpoint:end -->

@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 
 def main():
     root=Path(__file__).resolve().parents[1]
@@ -36,6 +37,8 @@ def main():
         actual=hashlib.sha256((output/(tag+'.fb.bgrx')).read_bytes()).hexdigest()
         if actual!=digest: raise SystemExit('Framebuffer regression: '+tag)
         print(tag+': framebuffer matches baseline')
+    subprocess.run([sys.executable,str(root/'tools/checkpoint.py'),'--event',
+                    'Three boot framebuffer regression checkpoints passed'],check=True)
     return 0
 
 if __name__=='__main__': raise SystemExit(main())
