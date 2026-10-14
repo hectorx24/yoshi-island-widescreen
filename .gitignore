@@ -1,0 +1,9 @@
+*.smc
+*.sfc
+*.sav
+*.srm
+local/
+upstream/
+generated/
+build/
+__pycache__/

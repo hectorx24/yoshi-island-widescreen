@@ -1,0 +1,9 @@
+turbo on
+wait 600
+dump boot600
+wait 600
+dump intro1200
+press start 1
+wait 180
+dump after_start
+quit

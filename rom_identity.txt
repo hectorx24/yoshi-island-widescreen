@@ -1,0 +1,6 @@
+display_name = Yoshi Island USA 1.1
+rom_file = yoshi-usa11.sfc
+expected_sha256 = bd763c1a56365c244be92e6cffefd318780a2a19eda7d5baf1c6d5bd6c1b3e06
+expected_crc32 = cf98ddaa
+region = USA 1.1
+game_id = yoshi-island
