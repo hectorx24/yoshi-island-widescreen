@@ -1,0 +1,9 @@
+{
+  "rom_sha256": "bd763c1a56365c244be92e6cffefd318780a2a19eda7d5baf1c6d5bd6c1b3e06",
+  "framebuffer_format": "256x224 BGRX8888",
+  "captures": {
+    "boot600": "979f1ad820935cda1325c67a50a13b51afdcacad5e66495a120e76cd819dedc7",
+    "intro1200": "b016fea463e24753f3acc446b26e7cbea993c4c7a3f2772f91fa32e81ebf42bd",
+    "after_start": "71a805121b633000b2cdba5a85813813a1a0f29700c3accb4ef814812549123e"
+  }
+}

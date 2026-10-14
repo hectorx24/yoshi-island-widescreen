@@ -6,14 +6,19 @@
 - MD5: ce1e3e33b6e39d37b43d7de599f9e785, exact match to Yoshifanatic's USA v1.1 README reference.
 - brunovalads reference targets v1.0 SHA-256 9b4957466798bbdb5b43a450bbb60b2591ae81d95b891430f62d53ca62e8bc7b; do not reuse its ROM addresses blindly.
 - Exact repository/tool revisions: dependencies.json. Upstream checkouts and all ROM-derived output are ignored.
-- Architecture: SNESRecomp generated C + shared SNES/Super FX runtime, beam-aligned frame driver. Hybrid execution currently has only 6 AOT-eligible variants; most game code runs via interpreter fallback. Not a completed static native port.
+- Architecture: SNESRecomp generated C + shared SNES/Super FX runtime, beam-aligned frame driver. Current local build has 70 AOT-eligible variants using local/boot-profile.json; a fresh unprofiled generate has 6. Most game code still runs via interpreter fallback. Not a completed static native port.
 - Built Mac ARM64 desktop executable: build/YoshiIsland. SDL3 built locally; incremental cache retained.
 - Verified automated 1382-frame boot replay exited normally; captured and visually inspected Nintendo opening, story, animated title. Super FX trace present. Evidence: local/scenes/, local/scenes.log.
+- Built independent pinned Snes9x libretro oracle and tools/oracle.py. Same input replay runs with video and nonzero audio. Reference framebuffer differences remain unresolved (details in docs/ENGINEERING_NOTES.md).
+- Native promotion exposed stack-dispatch corruption at $008150. force_lle in config/bank00.cfg restores exact baseline framebuffers at all 3 boot checkpoints. tools/regression_boot.py passes on corrected build. Small WRAM/SRAM differences are unresolved; no strict state-equivalence claim.
+- tests/tutorial.script completed 6211 frames; visually verified original tutorial/dialogs, moving Yoshi and scrolling; SRAM player X changed 136 -> 270. Evidence: local/tutorial/. No full-level, jump physics, egg throwing or collision qualification yet.
+- Normal-speed 600-frame SDL disk-audio test exited normally; S16LE stereo 44100 Hz sink produced 9.938 seconds, 348877 nonzero samples, RMS 747.33, peak 11712. Evidence: local/audio/metrics.json and boot.wav. Confirms audio signal, not fidelity or timing qualification. Wall-clock run was 10.619 seconds; do not claim correct pacing yet.
 - ROM intake: 3 unit tests pass. C geometry tests pass for 16:9, 19.5:9, 20:9, 21:9, 2772x1272 and insets. Geometry is not yet integrated into presentation.
-- No true widescreen, background extension, Android APK, full audio qualification, or gameplay validation yet.
+- No true widescreen, background extension, Android APK, full audio qualification, broad gameplay validation, physical controller or lifecycle validation yet.
 - Boss policy: prioritize actual world expansion individually; fixed camera/Super FX do not automatically disqualify encounters. Fallback needs a demonstrated encounter limitation.
 - Installed Rust minimal toolchain and project-local CMake/Ninja venv. Java, Android SDK/NDK absent from usual locations.
 - Build: sh tools/build.sh. Tests: sh tools/test.sh.
+- Rebuild intake: python3 tools/fetch_dependencies.py; sh tools/generate.sh '<ROM>' ['<private coverage JSON>']; sh tools/build.sh. README.md has setup and regression commands.
 - Boot replay: SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy SNESRECOMP_DUMP_DIR="$PWD/local/scenes" build/YoshiIsland --no-launcher --rom '<owner ROM path>' --script "$PWD/tests/boot.script".
 - Environment controls require SNESRECOMP_ prefix (e.g. SNESRECOMP_RUN_FRAMES); plain RUN_FRAMES is ignored.
-- Next: inspect gameplay replay, compare original viewport against oracle, expand revision-specific AOT roots and investigate camera/tile streaming/GSU rendering. Then Android integration.
+- Next: diagnose reference pixel/timing differences and remaining AOT state differences, then qualify tutorial mechanics and native WRAM handling. Investigate game-specific camera/tile streaming/GSU rendering including bosses. Android toolchain/frontend and APK packaging remain entirely unfinished. No different ROM revision is currently required.
