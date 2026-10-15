@@ -1,0 +1,150 @@
+# Diagnostic only: WRAM21A selects1-4 after normal map transition.
+# No ROM patch; not legitimate progression or an actual boss encounter test.
+turbo on
+wait 1200
+press start 8
+wait 180
+press start 8
+wait 180
+press start 8
+wait 1800
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+wait 300
+dump tutorial_candidate
+press start 8
+wait 180
+press a 8
+wait 300
+dump play_candidate
+press right 120
+press b 15
+wait 60
+dump motion_candidate
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+dump before_move
+press right 180
+press b 15
+wait 60
+dump after_move
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+dump step00
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+dump step01
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+dump step02
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+dump step03
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+dump step04
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+dump step05
+poke 21a 0300
+wait 400
+dump castle_loaded
+press right+b+y 45
+press right+y 35
+press right+b+y 45
+press right+b+y 45
+press right+y 35
+press right+b+y 45
+dump castle01
+press right+b+y 45
+press right+y 35
+press right+b+y 45
+press right+b+y 45
+press right+y 35
+press right+b+y 45
+dump castle03
+press right+b+y 45
+press right+y 35
+press right+b+y 45
+press right+b+y 45
+press right+y 35
+press right+b+y 45
+dump castle05
+press right+b+y 45
+press right+y 35
+press right+b+y 45
+press right+b+y 45
+press right+y 35
+press right+b+y 45
+dump castle07
+quit

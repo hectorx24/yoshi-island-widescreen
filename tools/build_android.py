@@ -40,6 +40,7 @@ def main():
     shutil.copy2(root/'tests/boot.script',out/'assets/boot.script')
     shutil.copy2(root/'tests/tutorial.script',out/'assets/tutorial.script')
     shutil.copy2(root/'tests/level_route.script',out/'assets/level_route.script')
+    shutil.copy2(root/'tests/castle_diagnostic.script',out/'assets/castle_diagnostic.script')
     (out/'assets/licenses').mkdir(exist_ok=True)
     shutil.copy2(root/'upstream/rcheevos/LICENSE',out/'assets/licenses/rcheevos.txt')
     unsigned=out/'artifacts/unsigned.apk'

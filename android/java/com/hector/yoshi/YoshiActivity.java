@@ -13,6 +13,11 @@ public final class YoshiActivity extends SDLActivity {
     private YoshiControls controls;
     static native void configurePresentation(int soft, boolean lighting);
     @Override protected String[] getLibraries() { return new String[]{"SDL3", "YoshiIsland"}; }
+    private String regressionScript() {
+        if (getIntent().getBooleanExtra("castle_test", false)) return "castle_diagnostic.script";
+        return getIntent().getBooleanExtra("level_test", false) ? "level_route.script" :
+            (getIntent().getBooleanExtra("adaptive", false) ? "tutorial.script" : "boot.script");
+    }
     @Override protected String[] getArguments() {
         android.content.SharedPreferences options = getSharedPreferences("yoshi-options", MODE_PRIVATE);
         int soft = options.getInt("display", 0);
@@ -24,10 +29,12 @@ public final class YoshiActivity extends SDLActivity {
             nativeSetenv("SNESRECOMP_PRESENT_CAPTURE",
                 new File(getFilesDir(), "presentation.bgrx").getPath());
         }
-        if (getIntent().getBooleanExtra("level_test", false)) {
+        if (getIntent().getBooleanExtra("level_test", false) ||
+            getIntent().getBooleanExtra("castle_test", false)) {
             nativeSetenv("SNESRECOMP_WS_FRAME_DIR", new File(getFilesDir(), "captures").getPath());
             nativeSetenv("SNESRECOMP_WS_FRAME_NUMBERS", "7819,8020");
-            nativeSetenv("SNESRECOMP_PRESENT_FRAME", "8020");
+            nativeSetenv("SNESRECOMP_PRESENT_FRAME",
+                getIntent().getBooleanExtra("castle_test", false) ? "8331" : "8020");
             nativeSetenv("SNESRECOMP_PRESENT_CAPTURE", new File(getFilesDir(), "viewport.bgrx").getPath());
         }
         configurePresentation(soft, lighting);
@@ -54,13 +61,13 @@ public final class YoshiActivity extends SDLActivity {
                 nativeSetenv("SNESRECOMP_WS_FRAME_FILE",
                     new File(captures, "wide-after_move.bgrx").getPath());
                 nativeSetenv("SNESRECOMP_WS_FRAME_NUMBER",
-                    getIntent().getBooleanExtra("level_test", false) ? "8020" : "6211");
+                    getIntent().getBooleanExtra("castle_test", false) ? "8331" :
+                    (getIntent().getBooleanExtra("level_test", false) ? "8020" : "6211"));
             } else {
                 nativeSetenv("SNESRECOMP_WS_EXTRA", "0");
             }
             nativeSetenv("SNESRECOMP_DUMP_DIR", captures.getPath());
-            String script = getIntent().getBooleanExtra("level_test", false) ? "level_route.script" :
-                (adaptive ? "tutorial.script" : "boot.script");
+            String script = regressionScript();
             return new String[]{"--no-launcher", "--config", new File(getFilesDir(), "config.ini").getPath(),
                 "--rom", new File(getFilesDir(), "yoshi-usa11.sfc").getPath(),
                 "--script", new File(getFilesDir(), script).getPath()};
@@ -83,8 +90,7 @@ public final class YoshiActivity extends SDLActivity {
             }
             File config = new File(getFilesDir(), "config.ini");
             if (getIntent().getBooleanExtra("regression", false)) {
-                String script = getIntent().getBooleanExtra("level_test", false) ? "level_route.script" :
-                    (getIntent().getBooleanExtra("adaptive", false) ? "tutorial.script" : "boot.script");
+                String script = regressionScript();
                 try (InputStream in = getAssets().open(script);
                      FileOutputStream out = new FileOutputStream(new File(getFilesDir(), script))) {
                     byte[] buffer = new byte[4096]; int n;
