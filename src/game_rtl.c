@@ -38,6 +38,7 @@
 #include "beam_frame_driver.h"
 #include "display_geometry.h"
 #include "yoshi_bg1_map.h"
+#include "yoshi_scene_map.h"
 #include "snes/ppu.h"
 #include "snes/snes.h"
 #include "snes/superfx.h"
@@ -79,8 +80,26 @@ static bool KnownPlane(unsigned layer, uint64_t expected) {
 /* Separate original authored plane in the next reached gameplay scene.
  * Both maps retain their own 512px horizontal domain and actual PPU phase. */
 static bool KnownBackground(void) {
-    return KnownPlane(1, UINT64_C(0x5f9149de60fa58c4)) ||
-           KnownPlane(1, UINT64_C(0x096eb6f63784aef3));
+    if (!g_ppu || !g_snes || !g_snes->cart || PPU_mode(g_ppu) != 1 ||
+        !PPU_bigTiles(g_ppu, 1) || g_ppu->bgXsc[1] != 0x3a ||
+        PPU_bgTileAdr(g_ppu, 1) != 0x7000) return false;
+    const unsigned header = g_ram[0x13a] | (unsigned)g_ram[0x13b] << 8;
+    /* Source verification generalizes to all32 original descriptors; scene
+     * eligibility remains the two actually composed/tested families until
+     * their foregrounds, effects and sprites are individually qualified. */
+    if (header != 26 && header != 29) return false;
+    static unsigned cached_header = 32;
+    static uint8_t authored[4096];
+    if (header != cached_header) {
+        if (!yoshi_bg2_asset(g_snes->cart->rom, g_snes->cart->romSize,
+                              header, authored)) return false;
+        cached_header = header;
+    }
+    const uint16_t *vram = g_ppu->renderVram ? g_ppu->renderVram : g_ppu->vram;
+    for (unsigned i = 0; i < 2048; ++i)
+        if (vram[0x3800 + i] != (authored[i * 2] | (unsigned)authored[i * 2 + 1] << 8))
+            return false;
+    return true;
 }
 
 uint16_t YoshiBg2MarginTile(uint16_t real_tile) {
@@ -550,7 +569,8 @@ void GameDrawPpuFrame(void)
     s_bg2_plane = 0;
     memset(s_bg3_rows, 0, sizeof(s_bg3_rows));
     PpuSetWidescreenBg3Widen(g_ppu,
-        KnownBackground() ? 1 : 0);
+        (KnownPlane(1, UINT64_C(0x5f9149de60fa58c4)) ||
+         KnownPlane(1, UINT64_C(0x096eb6f63784aef3))) ? 1 : 0);
     if (g_ppu->extraLeftCur || g_ppu->extraRightCur)
         snes_beam_frame_driver_draw_ppu_frame_observed(BlackUnverifiedMargins, NULL);
     else
