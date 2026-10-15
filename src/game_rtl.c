@@ -33,6 +33,7 @@
  */
 
 #include "game_rtl.h"
+#include "achievements.h"
 
 #include "beam_frame_driver.h"
 #include "display_geometry.h"
@@ -75,9 +76,16 @@ static bool KnownPlane(unsigned layer, uint64_t expected) {
     return hash == expected;
 }
 
+/* Separate original authored plane in the next reached gameplay scene.
+ * Both maps retain their own 512px horizontal domain and actual PPU phase. */
+static bool KnownBackground(void) {
+    return KnownPlane(1, UINT64_C(0x5f9149de60fa58c4)) ||
+           KnownPlane(1, UINT64_C(0x096eb6f63784aef3));
+}
+
 uint16_t YoshiBg2MarginTile(uint16_t real_tile) {
     if (!s_bg2_plane)
-        s_bg2_plane = KnownPlane(1, UINT64_C(0x5f9149de60fa58c4)) ? 1 : 2;
+        s_bg2_plane = KnownBackground() ? 1 : 2;
     /* Exact opening-scene 512x1024 authored plane. Its actual rendered scroll
      * owns both the tile key and pixel phase, independently of BG1. */
     WsShadowSetWorld(1, g_ppu->hScroll[1], g_ppu->vScroll[1]);
@@ -93,7 +101,7 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
         UINT64_C(0xe45b4a4d8172cda3), UINT64_C(0x394d1bfb82ddbdef)};
     const unsigned row = (wrapped_y >> 4) & 31;
     if (!s_bg2_plane)
-        s_bg2_plane = KnownPlane(1, UINT64_C(0x5f9149de60fa58c4)) ? 1 : 2;
+        s_bg2_plane = KnownBackground() ? 1 : 2;
     if (!s_bg3_rows[row]) {
         const uint16_t *vram = g_ppu->renderVram ? g_ppu->renderVram : g_ppu->vram;
         uint64_t hash = UINT64_C(14695981039346656037);
@@ -368,7 +376,7 @@ void GamePrepareFrame(int drawable_w, int drawable_h,
         *frame_h = 224;
         YoshiDisplayGeometry geometry;
         if ((g_ram[0x118] == 0x0e || g_ram[0x118] == 0x0f) &&
-            KnownPlane(1, UINT64_C(0x5f9149de60fa58c4)) &&
+            KnownBackground() &&
             yoshi_display_geometry(drawable_w, drawable_h, (YoshiInsets){0},
                                    7.0 / 6.0, &geometry)) {
             int extra = (geometry.logical_width - 256 + 1) / 2;
@@ -406,6 +414,7 @@ void GamePrepareFrame(int drawable_w, int drawable_h,
 void GameBeginFrame(unsigned number)
 {
     (void)number;
+    YoshiAchievementsBegin();
     extern void YoshiInstallAndroidLifecycle(void);
     YoshiInstallAndroidLifecycle();
     InstallYoshiGsuAuditHook();
@@ -490,6 +499,7 @@ static void AuditShadowTiles(unsigned number)
 
 void GameEndFrame(const uint8_t *field, unsigned number)
 {
+    YoshiAchievementsEnd();
     const char *directory = getenv("SNESRECOMP_WS_FRAME_DIR");
     if (directory && AuditFrameSelected(getenv("SNESRECOMP_WS_FRAME_NUMBERS"), number)) {
         char path[4096];
@@ -540,7 +550,7 @@ void GameDrawPpuFrame(void)
     s_bg2_plane = 0;
     memset(s_bg3_rows, 0, sizeof(s_bg3_rows));
     PpuSetWidescreenBg3Widen(g_ppu,
-        KnownPlane(1, UINT64_C(0x5f9149de60fa58c4)) ? 1 : 0);
+        KnownBackground() ? 1 : 0);
     if (g_ppu->extraLeftCur || g_ppu->extraRightCur)
         snes_beam_frame_driver_draw_ppu_frame_observed(BlackUnverifiedMargins, NULL);
     else

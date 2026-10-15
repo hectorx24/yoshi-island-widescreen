@@ -79,5 +79,13 @@ dispatcher correction.
 
 Replay tests/tutorial.script using the same --script/SNESRECOMP_DUMP_DIR
 pattern to reach the tutorial and exercise movement. Further mechanics,
-bosses, transformations, controller devices, saves, Android lifecycle, and
-widescreen remain unqualified.
+bosses, transformations and physical controller devices remain unqualified.
+See PROJECT_STATUS.md for verified Android lifecycle/saves, controls, adaptive
+opening/1-1 scenes, GPU display/lighting and optional native achievements.
+
+Android options (top-right touch button) include Auto/Show/Hide controls,
+save/load state, Sharp or Authentic Soft display, independent enhanced lighting,
+and optional RetroAchievements softcore login. Login is session-only; passwords
+and tokens are not persisted. Play stays available offline. Service/hash
+acceptance and real unlocks require account validation and are not yet verified.
+Pending achievement submissions are retained only for the current process.

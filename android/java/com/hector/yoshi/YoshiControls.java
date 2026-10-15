@@ -100,7 +100,8 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
         new AlertDialog.Builder(getContext()).setTitle("Yoshi Island")
             .setItems(new String[]{"Touch controls", "Save / load state", "Close save / rewind menu",
                 "Display: " + (prefs.getInt("display", 0) == 0 ? "Sharp" : "Authentic Soft"),
-                "Enhanced lighting: " + (prefs.getBoolean("lighting", false) ? "On" : "Off")},
+                "Enhanced lighting: " + (prefs.getBoolean("lighting", false) ? "On" : "Off"),
+                "RetroAchievements"},
                 new DialogInterface.OnClickListener() {
                 @Override public void onClick(DialogInterface dialog, int which) {
                     if (which == 0) {
@@ -126,6 +127,8 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
                                     YoshiActivity.configurePresentation(value, prefs.getBoolean("lighting", false));
                                     choice.dismiss();
                                 }}).setNegativeButton("Back", null).show();
+                    } else if (which == 5) {
+                        YoshiAchievements.show((android.app.Activity)getContext());
                     } else {
                         boolean enabled = !prefs.getBoolean("lighting", false);
                         prefs.edit().putBoolean("lighting", enabled).apply();

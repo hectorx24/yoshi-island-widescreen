@@ -39,6 +39,9 @@ def main():
     (out/'assets/yoshi-usa11.sfc').write_bytes(raw)
     shutil.copy2(root/'tests/boot.script',out/'assets/boot.script')
     shutil.copy2(root/'tests/tutorial.script',out/'assets/tutorial.script')
+    shutil.copy2(root/'tests/level_route.script',out/'assets/level_route.script')
+    (out/'assets/licenses').mkdir(exist_ok=True)
+    shutil.copy2(root/'upstream/rcheevos/LICENSE',out/'assets/licenses/rcheevos.txt')
     unsigned=out/'artifacts/unsigned.apk'
     run(bt/'aapt','package','-f','--debug-mode','-M',root/'android/AndroidManifest.xml','-I',jar,'-A',out/'assets','-F',unsigned)
     with zipfile.ZipFile(unsigned,'a',compression=zipfile.ZIP_DEFLATED) as z:

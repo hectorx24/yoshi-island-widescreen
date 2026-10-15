@@ -8,4 +8,8 @@ clang -std=c11 -Wall -Wextra -Werror -Isrc src/display_geometry.c tests/test_geo
 local/test_geometry
 clang -std=c11 -Wall -Wextra -Werror -Isrc src/achievement_memory.c tests/test_achievement_memory.c -o local/test_achievement_memory
 local/test_achievement_memory
-python3 tools/checkpoint.py --event 'ROM intake and display geometry tests passed'
+if [ -f build/libyoshi_rcheevos.a ]; then
+  clang -std=c11 -D_POSIX_C_SOURCE=200809L -Isrc -Iupstream/snesrecomp/runner/src -Iupstream/rcheevos/include tests/test_achievements.c src/achievement_memory.c build/libyoshi_rcheevos.a -lm -lpthread -o local/test_achievements
+  local/test_achievements
+fi
+python3 tools/checkpoint.py --event 'ROM/geometry/quota, achievement memory and available native rc_client fixture tests passed'

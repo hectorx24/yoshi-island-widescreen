@@ -18,7 +18,7 @@ include(${SNESRECOMP_ROOT}/runner/runner.cmake)
 set(YOSHI_SOURCES ${SNESRECOMP_RUNNER_SOURCES}
   src/main.c src/game_rtl.c src/host_contract.c src/display_geometry.c
   src/yoshi_bg1_map.c src/android_support.c src/presentation.c
-  src/achievement_memory.c)
+  src/achievement_memory.c src/achievements.c)
 if(ANDROID)
   add_library(YoshiIsland SHARED ${YOSHI_SOURCES})
   target_link_options(YoshiIsland PRIVATE "-Wl,-z,max-page-size=16384")
