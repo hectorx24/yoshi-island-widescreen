@@ -46,31 +46,40 @@ for tag,digest in expected.items():
     if hashlib.sha256(data).hexdigest()!=digest:raise SystemExit('Android framebuffer differs at '+tag)
     print(tag+': exact desktop framebuffer match',flush=True)
 
-# Exercise live drawable-driven widening separately from the 4:3 hash baseline.
-# The state's framebuffer dump intentionally crops to the authentic 256px
-# center, so verify that center remains bit-identical and inspect the native
-# diagnostic for the actual adaptive frame width.
+# Exercise live drawable-driven widening through actual tutorial gameplay.
+# The state dump is the same-run authentic 256px crop; the opt-in frame dump
+# exposes the full wider PPU field for direct center comparison.
 call('shell','am','force-stop','com.hector.yoshi')
 call('shell','run-as','com.hector.yoshi','rm','-f',
      *[f'files/captures/{tag}.fb.bgrx' for tag in capture_names],
-     'files/captures/adaptive-width.txt',check=False)
+     'files/captures/after_move.fb.bgrx','files/captures/adaptive-width.txt',
+     'files/captures/wide-after_move.bgrx',check=False)
 call('logcat','-c')
 call('shell','am','start','-W','-n','com.hector.yoshi/.YoshiActivity',
      '--ez','regression','true','--ez','adaptive','true')
 deadline=time.monotonic()+90
 while time.monotonic()<deadline:
-    result=call('shell','run-as','com.hector.yoshi','ls','files/captures/after_start.fb.bgrx',check=False)
+    result=call('shell','run-as','com.hector.yoshi','ls','files/captures/after_move.fb.bgrx',check=False)
     if result.returncode==0:break
     time.sleep(1)
 else:
     (out/'adaptive-logcat.txt').write_bytes(call('logcat','-d').stdout)
-    raise SystemExit('Adaptive Android capture did not complete')
-data=call('exec-out','run-as','com.hector.yoshi','cat','files/captures/after_start.fb.bgrx').stdout
-if len(data)!=256*224*4:
-    raise SystemExit(f'Unexpected centered framebuffer size under widescreen: {len(data)} bytes')
-if hashlib.sha256(data).hexdigest()!=expected['after_start']:
-    raise SystemExit('Widened PPU changed the authentic 256px center framebuffer')
-(out/'adaptive-after_start.fb.bgrx').write_bytes(data)
+    raise SystemExit('Adaptive Android tutorial capture did not complete')
+center=call('exec-out','run-as','com.hector.yoshi','cat','files/captures/after_move.fb.bgrx').stdout
+wide=call('exec-out','run-as','com.hector.yoshi','cat','files/captures/wide-after_move.bgrx').stdout
+if len(center)!=256*224*4:
+    raise SystemExit(f'Unexpected native tutorial framebuffer size: {len(center)} bytes')
+if len(wide)%(224*4):
+    raise SystemExit(f'Adaptive full-field capture has invalid size: {len(wide)} bytes')
+wide_width=len(wide)//(224*4)
+if wide_width<=256 or (wide_width-256)%2:
+    raise SystemExit(f'Adaptive tutorial field is not a symmetric wider frame: {wide_width}px')
+extra=(wide_width-256)//2
+wide_center=b''.join(wide[(y*wide_width+extra)*4:(y*wide_width+extra+256)*4]
+                      for y in range(224))
+if center!=wide_center:
+    raise SystemExit('Widened tutorial frame center differs from its native 256px crop')
+(out/'adaptive-after_move.fb.bgrx').write_bytes(wide)
 log=call('logcat','-d').stdout
 (out/'adaptive-logcat.txt').write_bytes(log)
 diag=call('exec-out','run-as','com.hector.yoshi','cat','files/captures/adaptive-width.txt').stdout
@@ -79,5 +88,7 @@ import re
 matches=re.findall(rb'drawable=(\d+)x(\d+) frame=(\d+)x(\d+)',diag)
 if not matches or int(matches[-1][2])<=256:
     raise SystemExit('Android drawable did not select a widened frame; inspect adaptive-width.txt')
-print(f"adaptive PPU field: {matches[-1][2].decode()}x224; authentic 256px center matches desktop",flush=True)
-subprocess.run(['python3',str(root/'tools/checkpoint.py'),'--event','Android 4:3 framebuffer hashes match desktop; live 1280x720 drawable selects 342x224 and preserves exact 256px center'],check=True)
+if int(matches[-1][2])!=wide_width:
+    raise SystemExit(f'Diagnostic frame width {matches[-1][2].decode()} disagrees with captured width {wide_width}')
+print(f"adaptive tutorial PPU field: {wide_width}x224; same-run native center matches",flush=True)
+subprocess.run(['python3',str(root/'tools/checkpoint.py'),'--event','Android boot hashes match desktop; adaptive tutorial field and same-run 256px center crop verified'],check=True)

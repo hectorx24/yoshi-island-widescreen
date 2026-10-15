@@ -14,17 +14,22 @@ public final class YoshiActivity extends SDLActivity {
         if (getIntent().getBooleanExtra("regression", false)) {
             File captures = new File(getFilesDir(), "captures");
             captures.mkdirs();
-            if (getIntent().getBooleanExtra("adaptive", false)) {
+            boolean adaptive = getIntent().getBooleanExtra("adaptive", false);
+            if (adaptive) {
                 nativeSetenv("SNESRECOMP_WS_DIAG", "1");
                 nativeSetenv("SNESRECOMP_WS_DIAG_FILE",
                     new File(captures, "adaptive-width.txt").getPath());
+                nativeSetenv("SNESRECOMP_WS_FRAME_FILE",
+                    new File(captures, "wide-after_move.bgrx").getPath());
+                nativeSetenv("SNESRECOMP_WS_FRAME_NUMBER", "6211");
             } else {
                 nativeSetenv("SNESRECOMP_WS_EXTRA", "0");
             }
             nativeSetenv("SNESRECOMP_DUMP_DIR", captures.getPath());
+            String script = adaptive ? "tutorial.script" : "boot.script";
             return new String[]{"--no-launcher", "--config", new File(getFilesDir(), "config.ini").getPath(),
                 "--rom", new File(getFilesDir(), "yoshi-usa11.sfc").getPath(),
-                "--script", new File(getFilesDir(), "boot.script").getPath()};
+                "--script", new File(getFilesDir(), script).getPath()};
         }
         return new String[]{"--no-launcher", "--config", new File(getFilesDir(), "config.ini").getPath(),
                             "--rom", new File(getFilesDir(), "yoshi-usa11.sfc").getPath()};
@@ -44,8 +49,10 @@ public final class YoshiActivity extends SDLActivity {
             }
             File config = new File(getFilesDir(), "config.ini");
             if (getIntent().getBooleanExtra("regression", false)) {
-                try (InputStream in = getAssets().open("boot.script");
-                     FileOutputStream out = new FileOutputStream(new File(getFilesDir(), "boot.script"))) {
+                String script = getIntent().getBooleanExtra("adaptive", false)
+                    ? "tutorial.script" : "boot.script";
+                try (InputStream in = getAssets().open(script);
+                     FileOutputStream out = new FileOutputStream(new File(getFilesDir(), script))) {
                     byte[] buffer = new byte[4096]; int n;
                     while ((n = in.read(buffer)) != -1) out.write(buffer, 0, n);
                 }

@@ -38,6 +38,7 @@ def main():
     run(bt/'d8','--lib',jar,'--min-api','26','--output',out/'dex',*classes)
     (out/'assets/yoshi-usa11.sfc').write_bytes(raw)
     shutil.copy2(root/'tests/boot.script',out/'assets/boot.script')
+    shutil.copy2(root/'tests/tutorial.script',out/'assets/tutorial.script')
     unsigned=out/'artifacts/unsigned.apk'
     run(bt/'aapt','package','-f','--debug-mode','-M',root/'android/AndroidManifest.xml','-I',jar,'-A',out/'assets','-F',unsigned)
     with zipfile.ZipFile(unsigned,'a',compression=zipfile.ZIP_DEFLATED) as z:

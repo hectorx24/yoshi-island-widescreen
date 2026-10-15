@@ -9,6 +9,8 @@ void GameDrawPpuFrame(void);
 void GameSessionReset(void);
 void GamePrepareFrame(int drawable_w, int drawable_h,
                       int *frame_w, int *frame_h);
+void GameBeginFrame(unsigned number);
+void GameEndFrame(const uint8_t *field, unsigned number);
 
 extern const RtlGameInfo kGameInfo;
 
