@@ -9,6 +9,7 @@
 - Java17/SDK35 reused from /Users/hectorx24/Downloads/patreon/tooling/{jdk-17.0.20.1+1/Contents/Home,sdk}. NDK r27d 27.3.13750724 copied to local/android-toolchain/ndk; official DMG SHA1 80f11292080fab4e869799f1d23caa88dcf3c709 verified. No mounted DMG needed.
 - Adaptive native PPU width is wired only for verified game modes $0E/$0F; menus/narrative keep 256x224. A 1280x720 drawable selects 342x224 (43 extra pixels per side at 7:6 PAR). For widened gameplay, `GameBeginFrame` maps the four v1.1 layer origins at WRAM `$7E0039 + 4*n` into the runtime world-keyed BG shadow. This is presentation-only; collision and simulation timing are unchanged. Bosses in gameplay mode remain eligible with no blanket restriction.
 - Widened 6,211-frame tutorial replay completed and produced nonblack margins; exact visual authenticity is NOT complete. At frame 6120 on desktop, BG1 world-shadow counters reported west hit 4,347,767 / miss 0, east hit 1,464,602 / miss 5,859,970; BG2 east hit 9,575,680 / miss 28,794,060. Misses fall back to raw tilemap data. The right gutter capture visibly has checkerboard/echo artifacts, so the next step is to correlate Yoshi's streamed map and GSU output with the exact margin tiles, then remove only demonstrated ghosts. Evidence: `local/wide-tutorial/wide-after_move.png`, `.bgrx`, `ws.log`; Android adaptive capture: `local/android/smoke/adaptive-after_move.png`.
+- Failed experiment: enabling `WsShadowSetRejectEastEcho` on every BG changed 2,538 west-margin pixels and 136 east-margin pixels, changed no center pixels, and left the 8,173 nonblack east-margin pixels/checkerboard artifact intact. Do not enable it globally; it does not solve this tilemap source.
 
 ## Verified tests and failures to avoid
 - sh tools/test.sh: ROM intake + geometry and quota parsing pass (6 Python tests plus C cases).
@@ -24,7 +25,7 @@
 - src/main.c: shared host identity/entry and native widescreen callback wiring; src/game_rtl.c: beam frame driver, aspect-driven frame sizing and Yoshi camera/world-shadow hooks; config/bank00.cfg: dispatcher exclusion; src/display_geometry.c: tested geometry component.
 - CMakeLists.txt: desktop executable/Android shared-library wiring; android/AndroidManifest.xml and android/java/com/hector/yoshi/YoshiActivity.java: direct-launch wrapper, ROM extraction, immersive mode, developer regression intent.
 - tools/build_android.py: manual javac/d8/aapt/signing pipeline; tools/create_test_avd.py: isolated AVD; tools/android_smoke.py: verified 4:3 install/replay hashes plus adaptive width on emulator. Explicitly removes stale guest captures before each replay; wildcard cleanup through `adb shell` was unreliable.
-- Latest commit f08465b (Android ARM64 port and adaptive PPU width); prior cf78b6e (handoff workflow), 83f52e0 (oracle/native promotion fix), d50b951 (initial integration). No ROMs, extracted assets, APKs, or signing keys are tracked.
+- Latest commit 6b5ca4e (Yoshi layer origins and PPU shadow wiring); prior 7b19f4c (Android/widescreen verification handoff), f08465b (Android ARM64 port and adaptive PPU width), cf78b6e (handoff workflow). No ROMs, extracted assets, APKs, or signing keys are tracked.
 
 ## Commands and next concrete action
 - Build/test: sh tools/build.sh; sh tools/test.sh; python3 tools/regression_boot.py --rom '<ROM>'.
@@ -43,7 +44,7 @@
 
 <!-- checkpoint:begin -->
 ## Automatic checkpoint
-- Checked 2026-10-15T01:10:38+00:00; Adaptive Android tutorial field 342x224 and 6211-frame desktop wide tutorial verified; BG1 east echoes remain open
-- Git base at checkpoint: 7b19f4c; 7 changed/untracked paths (run git status).
+- Checked 2026-10-15T01:13:07+00:00; Widened tutorial run verified; global east-echo policy rejected as ineffective
+- Git base at checkpoint: 6b5ca4e; 1 changed/untracked paths (run git status).
 - Last supported quota observation (2026-10-15T00:54:48+00:00): five_hour: 95% remaining; weekly: 84% remaining.
 <!-- checkpoint:end -->
