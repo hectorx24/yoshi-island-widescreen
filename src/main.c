@@ -27,6 +27,7 @@
 
 #include "host_main.h"
 #include "game_rtl.h"
+#include "presentation.h"
 #include "snesrecomp_rom_identity.h"  /* generated from rom_identity.txt */
 
 #ifndef __ANDROID__
@@ -58,6 +59,7 @@ static const SnesDesktopHostGame kGameHost = {
     .prepare_frame        = &GamePrepareFrame,
     .begin_sim_frame      = &GameBeginFrame,
     .end_sim_frame        = &GameEndFrame,
+    .draw_frame           = &YoshiComposeFrame,
     /* Battery-backed SRAM shows the launcher's SAVES panel. Leave NULL for a
      * title without one. The path is exe-relative. */
     .sram_path           = "saves/save.srm",

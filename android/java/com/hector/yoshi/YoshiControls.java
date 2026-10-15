@@ -98,7 +98,9 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
     private void options() {
         releaseAll();
         new AlertDialog.Builder(getContext()).setTitle("Yoshi Island")
-            .setItems(new String[]{"Touch controls", "Save / load state", "Close game menu"},
+            .setItems(new String[]{"Touch controls", "Save / load state", "Close save / rewind menu",
+                "Display: " + (prefs.getInt("display", 0) == 0 ? "Sharp" : "Authentic Soft"),
+                "Enhanced lighting: " + (prefs.getBoolean("lighting", false) ? "On" : "Off")},
                 new DialogInterface.OnClickListener() {
                 @Override public void onClick(DialogInterface dialog, int which) {
                     if (which == 0) {
@@ -111,10 +113,23 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
                                     refreshController();
                                     choice.dismiss();
                                 }}).setNegativeButton("Cancel", null).show();
-                    } else {
+                    } else if (which == 1 || which == 2) {
                         int key = which == 1 ? KeyEvent.KEYCODE_F11 : KeyEvent.KEYCODE_ESCAPE;
                         SDLActivity.onNativeKeyDown(key);
                         SDLActivity.onNativeKeyUp(key);
+                    } else if (which == 3) {
+                        new AlertDialog.Builder(getContext()).setTitle("Display")
+                            .setSingleChoiceItems(new String[]{"Sharp", "Authentic Soft"},
+                                prefs.getInt("display", 0), new DialogInterface.OnClickListener() {
+                                @Override public void onClick(DialogInterface choice, int value) {
+                                    prefs.edit().putInt("display", value).apply();
+                                    YoshiActivity.configurePresentation(value, prefs.getBoolean("lighting", false));
+                                    choice.dismiss();
+                                }}).setNegativeButton("Back", null).show();
+                    } else {
+                        boolean enabled = !prefs.getBoolean("lighting", false);
+                        prefs.edit().putBoolean("lighting", enabled).apply();
+                        YoshiActivity.configurePresentation(prefs.getInt("display", 0), enabled);
                     }
                 }}).setNegativeButton("Back", null).show();
     }

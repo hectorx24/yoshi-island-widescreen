@@ -11,8 +11,20 @@ import java.io.*;
 
 public final class YoshiActivity extends SDLActivity {
     private YoshiControls controls;
+    static native void configurePresentation(int soft, boolean lighting);
     @Override protected String[] getLibraries() { return new String[]{"SDL3", "YoshiIsland"}; }
     @Override protected String[] getArguments() {
+        android.content.SharedPreferences options = getSharedPreferences("yoshi-options", MODE_PRIVATE);
+        int soft = options.getInt("display", 0);
+        boolean lighting = options.getBoolean("lighting", false);
+        if (getIntent().getBooleanExtra("display_test", false)) {
+            soft = 0; lighting = false;
+            nativeSetenv("SNESRECOMP_PRESENT_TEST_CYCLE", "1");
+            nativeSetenv("SNESRECOMP_PRESENT_FRAME", "6000");
+            nativeSetenv("SNESRECOMP_PRESENT_CAPTURE",
+                new File(getFilesDir(), "presentation.bgrx").getPath());
+        }
+        configurePresentation(soft, lighting);
         if (getIntent().getBooleanExtra("save_diag", false))
             nativeSetenv("SNESRECOMP_SAVE_DIAG",
                 new File(getFilesDir(), "save-diagnostic.txt").getPath());

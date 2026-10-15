@@ -3,6 +3,7 @@
   "yoshifanatic": {"url": "https://github.com/Yoshifanatic1/Yoshi-s-Island-Disassembly.git", "revision": "7be13ebf078a3e09849d533fea8db65894c5e36c"},
   "yoshisisland-disassembly": {"url": "https://github.com/brunovalads/yoshisisland-disassembly.git", "revision": "fb79f7994fb19146de35c02fb98fee8af5877372"},
   "snes9x": {"url": "https://github.com/snes9xgit/snes9x.git", "revision": "1bcc369e89f08243e0a462882fb1f3e42e51de3a"},
+  "rcheevos": {"url": "https://github.com/RetroAchievements/rcheevos.git", "revision": "1433173220a7eaede6a9ed7a18e94117be1821e0"},
   "build_tools": {"cmake": "4.4.4", "ninja": "1.13.2", "rust_analyzer_toolchain": "1.97.1"},
   "SDL3": {"version": "3.4.10", "sha256": "12b34280415ec8418c864408b93d008a20a6530687ee613d60bfbd20411f2785"}
 }

@@ -12,10 +12,13 @@ endif()
 set(SNESRECOMP_ROOT "${CMAKE_SOURCE_DIR}/upstream/snesrecomp")
 include(${CMAKE_SOURCE_DIR}/cmake/yoshi_widescreen_patch.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/yoshi_android_patch.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/yoshi_presentation_patch.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/yoshi_achievements.cmake)
 include(${SNESRECOMP_ROOT}/runner/runner.cmake)
 set(YOSHI_SOURCES ${SNESRECOMP_RUNNER_SOURCES}
   src/main.c src/game_rtl.c src/host_contract.c src/display_geometry.c
-  src/yoshi_bg1_map.c src/android_support.c)
+  src/yoshi_bg1_map.c src/android_support.c src/presentation.c
+  src/achievement_memory.c)
 if(ANDROID)
   add_library(YoshiIsland SHARED ${YOSHI_SOURCES})
   target_link_options(YoshiIsland PRIVATE "-Wl,-z,max-page-size=16384")
@@ -28,6 +31,6 @@ snesrecomp_target_generated_code(YoshiIsland ${YOSHI_GENERATED_DIR})
 target_include_directories(YoshiIsland PRIVATE ${SNESRECOMP_RUNNER_INCLUDE_DIRS}
   ${SNESRECOMP_ROOT}/runner/src/desktop ${CMAKE_SOURCE_DIR}/src
   ${CMAKE_SOURCE_DIR}/config)
-target_link_libraries(YoshiIsland PRIVATE ${SNESRECOMP_RUNNER_LIBRARIES})
+target_link_libraries(YoshiIsland PRIVATE ${SNESRECOMP_RUNNER_LIBRARIES} yoshi_rcheevos)
 snesrecomp_target_sdl(YoshiIsland)
 snesrecomp_target_desktop_host(YoshiIsland)
