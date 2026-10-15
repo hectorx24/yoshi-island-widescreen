@@ -36,12 +36,14 @@
 
 #include "beam_frame_driver.h"
 #include "display_geometry.h"
+#include "yoshi_bg1_map.h"
 #include "snes/ppu.h"
 #include "snes/snes.h"
 #include "snes/superfx.h"
 #include "snes/ws_shadow.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* USA v1.1 RAM_Map_YI.asm: the four 16-bit layer origins begin at $7E:0039
  * and advance by four bytes per layer. They are pixel-space world positions;
@@ -53,7 +55,83 @@ extern Snes *g_snes;
 static int s_frame_width = 256;
 static bool s_gsu_audit_hook_installed;
 static int s_gsu_replay_audit_frame;
-static long s_gsu_replay_source_shift;
+static uint8_t s_map_rows[256];
+
+/* Recover only the wrap epoch from WRAM. Fine phase comes from the PPU
+ * register actually used to render this line, independently for each layer. */
+static int WorldPhase(unsigned reference, unsigned ppu_phase) {
+    int result = (int)(reference & ~1023u) + (int)(ppu_phase & 1023u);
+    if (result + 512 < (int)reference) result += 1024;
+    if (result > (int)reference + 512) result -= 1024;
+    return result;
+}
+
+static bool VerifiedMapRow(unsigned wrapped_y, unsigned hscroll,
+                           int *world_x, int *world_y) {
+    const unsigned camera_x = g_ram[0x39] | ((unsigned)g_ram[0x3a] << 8);
+    const unsigned camera_y = g_ram[0x3b] | ((unsigned)g_ram[0x3c] << 8);
+    *world_x = WorldPhase(camera_x, hscroll);
+    *world_y = WorldPhase(camera_y, wrapped_y);
+    if (!g_snes || !g_snes->cart || !g_snes->cart->superfx ||
+        (g_ram[0x118] != 0x0e && g_ram[0x118] != 0x0f) ||
+        PPU_mode(g_ppu) != 1 || PPU_bigTiles(g_ppu, 0) ||
+        (g_ppu->bgXsc[0] & 3) != 1 ||
+        *world_x < 0 || *world_y < 0 || *world_y >= 2048) return false;
+    const unsigned ty = (unsigned)*world_y / 8;
+    if (s_map_rows[ty]) return s_map_rows[ty] == 1;
+    const uint16_t *vram = g_ppu->renderVram ? g_ppu->renderVram : g_ppu->vram;
+    bool valid = true;
+    for (unsigned tx = ((unsigned)*world_x + 7) / 8;
+         tx < ((unsigned)*world_x + 256) / 8; ++tx) {
+        uint16_t decoded;
+        const unsigned map = PPU_bgTilemapAdr(g_ppu, 0) + (tx & 31) +
+                             ((ty & 31) << 5) + ((tx & 32) ? 0x400 : 0);
+        if (!yoshi_bg1_tile(g_ram, g_snes->cart->superfx->ram,
+                            g_snes->cart->rom, g_snes->cart->romSize,
+                            tx, ty, &decoded) || decoded != vram[map & 0x7fff]) {
+            valid = false;
+            break;
+        }
+    }
+    s_map_rows[ty] = valid ? 1 : 2;
+    return valid;
+}
+
+/* Called by the pinned runner patch for BG1 margin cells ONLY. Never consult
+ * the rolling VRAM/history fallback here. Verify this field's native row,
+ * then read the corresponding original map source; otherwise stay blank. */
+uint16_t YoshiBg1MarginTile(int screen_x, uint32_t wrapped_y,
+                           uint16_t hscroll) {
+    int x, y;
+    uint16_t tile;
+    if (VerifiedMapRow(wrapped_y, hscroll, &x, &y) && x + screen_x >= 0 &&
+        yoshi_bg1_tile(g_ram, g_snes->cart->superfx->ram,
+                       g_snes->cart->rom, g_snes->cart->romSize,
+                       (unsigned)(x + screen_x) / 8, (unsigned)y / 8, &tile))
+        return tile;
+    return 0x18ff;
+}
+
+static void BlackUnverifiedMargins(const Ppu *ppu, unsigned line, void *context) {
+    (void)context;
+    if (!(ppu->extraLeftCur || ppu->extraRightCur)) return;
+    if (!(g_snes_ppu_dbg_layer_mask & 1) ||
+        !((ppu->screenEnabled[0] | ppu->screenEnabled[1]) & 1)) return;
+    int x, y;
+    const bool valid = VerifiedMapRow(ppu->vScroll[0] + line,
+                                      ppu->hScroll[0], &x, &y);
+    uint8_t *row = ppu->renderBuffer + (line - 1) * ppu->renderPitch;
+    for (int sx = -ppu->extraLeftCur; sx < 256 + ppu->extraRightCur; ++sx) {
+        if (sx >= 0 && sx < 256) continue;
+        if (!valid || x + sx < 0 || x + sx >= 4096) {
+            uint8_t *pixel = row + (sx + ppu->extraLeftRight) * 4;
+            pixel[0] = pixel[1] = pixel[2] = 0;
+        }
+    }
+    /* Raster writes may change a row between lines. Cache only within the
+     * line, never across an HDMA/journal boundary. */
+    memset(s_map_rows, 0, sizeof(s_map_rows));
+}
 
 /* Diagnostic private replay: verify that a copied GSU task reproduces the
  * native MAP16 conversion without changing the live Super FX state. */
@@ -67,24 +145,6 @@ static bool YoshiGsuReplayAuditPrepare(void *context, const SuperFx *source,
         return false;
     extern int snes_frame_counter;
     s_gsu_replay_audit_frame = snes_frame_counter;
-    const char *shift_text = getenv("SNESRECOMP_WS_GSU_REPLAY_SHIFT");
-    s_gsu_replay_source_shift = shift_text ? strtol(shift_text, NULL, 10) : 0;
-    if (s_gsu_replay_source_shift && source && source->ram && private_ram &&
-        source->ram_size >= 0x8000) {
-        /* The v1.1 task loader maps vertical MAP16 steps to +16 words in
-         * $7F8000 and horizontal neighbors to adjacent words. This optional
-         * experiment edits private task RAM only. */
-        for (unsigned row = 0; row < 12; ++row) {
-            const int index = 0x300 + (int)row * 16 +
-                             (int)s_gsu_replay_source_shift;
-            if (index < 0 || index >= 0x4000) continue;
-            const uint16_t map16 = g_ram[0x18000 + index * 2] |
-                                   ((uint16_t)g_ram[0x18001 + index * 2] << 8);
-            const unsigned address = 0x409eu + row * 0x40u;
-            private_ram[address] = (uint8_t)map16;
-            private_ram[address + 1] = (uint8_t)(map16 >> 8);
-        }
-    }
     return true;
 }
 
@@ -113,7 +173,7 @@ static void YoshiGsuReplayAuditComplete(void *context,
     FILE *file = fopen(path, "a");
     if (file) {
         fprintf(file, "%d,%ld,%u,%u", s_gsu_replay_audit_frame,
-                s_gsu_replay_source_shift, matches, mismatches);
+                0L, matches, mismatches);
         for (unsigned row = 0; row < 24; ++row) {
             for (unsigned side = 0; side < 2; ++side) {
                 const unsigned address =
@@ -395,7 +455,11 @@ void GameRunOneFrame(void)
 
 void GameDrawPpuFrame(void)
 {
-    snes_beam_frame_driver_draw_ppu_frame();
+    memset(s_map_rows, 0, sizeof(s_map_rows));
+    if (g_ppu->extraLeftCur || g_ppu->extraRightCur)
+        snes_beam_frame_driver_draw_ppu_frame_observed(BlackUnverifiedMargins, NULL);
+    else
+        snes_beam_frame_driver_draw_ppu_frame();
 }
 
 void GameSessionReset(void)
