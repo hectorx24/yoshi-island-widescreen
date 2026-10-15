@@ -57,25 +57,62 @@ static bool s_gsu_audit_hook_installed;
 static int s_gsu_replay_audit_frame;
 static uint8_t s_map_rows[256];
 static uint8_t s_bg2_plane;
+static uint8_t s_bg3_rows[32];
+
+static bool KnownPlane(unsigned layer, uint64_t expected) {
+    if (!g_ppu || PPU_mode(g_ppu) != 1 || !PPU_bigTiles(g_ppu, layer) ||
+        g_ppu->bgXsc[layer] != (layer == 1 ? 0x3a : 0x34) ||
+        PPU_bgTileAdr(g_ppu, layer) != (layer == 1 ? 0x7000 : 0x2000))
+        return false;
+    const uint16_t *vram = g_ppu->renderVram ? g_ppu->renderVram : g_ppu->vram;
+    const unsigned base = layer == 1 ? 0x3800 : 0x3400;
+    const unsigned end = layer == 1 ? 0x4000 : 0x3800;
+    uint64_t hash = UINT64_C(14695981039346656037);
+    for (unsigned i = base; i < end; ++i) {
+        hash = (hash ^ (vram[i] & 255)) * UINT64_C(1099511628211);
+        hash = (hash ^ (vram[i] >> 8)) * UINT64_C(1099511628211);
+    }
+    return hash == expected;
+}
 
 uint16_t YoshiBg2MarginTile(uint16_t real_tile) {
-    if (!s_bg2_plane) {
-        bool valid = PPU_mode(g_ppu) == 1 && g_ppu->bgXsc[1] == 0x3a &&
-                     PPU_bgTileAdr(g_ppu, 1) == 0x7000;
-        const uint16_t *vram = g_ppu->renderVram ? g_ppu->renderVram : g_ppu->vram;
-        uint64_t hash = UINT64_C(14695981039346656037);
-        for (unsigned i = 0x3800; valid && i < 0x4000; ++i) {
-            hash = (hash ^ (vram[i] & 255)) * UINT64_C(1099511628211);
-            hash = (hash ^ (vram[i] >> 8)) * UINT64_C(1099511628211);
-        }
-        /* Exact opening-scene map: four route captures showed identical
-         * 512x1024 authored data, with distinct content in both 256px halves.
-         * This signature grants no plane policy to other scenes. */
-        s_bg2_plane = valid && hash == UINT64_C(0x5f9149de60fa58c4) ? 1 : 2;
-    }
+    if (!s_bg2_plane)
+        s_bg2_plane = KnownPlane(1, UINT64_C(0x5f9149de60fa58c4)) ? 1 : 2;
+    /* Exact opening-scene 512x1024 authored plane. Its actual rendered scroll
+     * owns both the tile key and pixel phase, independently of BG1. */
     WsShadowSetWorld(1, g_ppu->hScroll[1], g_ppu->vScroll[1]);
     WsShadowSetScroll(1, g_ppu->hScroll[1], g_ppu->vScroll[1]);
     return s_bg2_plane == 1 ? real_tile : 0x18ee;
+}
+
+uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
+    static const uint64_t lower_rows[8] = {
+        UINT64_C(0xd973e4360957b865), UINT64_C(0xab29a56890591242),
+        UINT64_C(0x497113f1e5ed2ec2), UINT64_C(0x18fb135bc08fde80),
+        UINT64_C(0x809cd72d4eedbad1), UINT64_C(0x601436a2995304b4),
+        UINT64_C(0xe45b4a4d8172cda3), UINT64_C(0x394d1bfb82ddbdef)};
+    const unsigned row = (wrapped_y >> 4) & 31;
+    if (!s_bg2_plane)
+        s_bg2_plane = KnownPlane(1, UINT64_C(0x5f9149de60fa58c4)) ? 1 : 2;
+    if (!s_bg3_rows[row]) {
+        const uint16_t *vram = g_ppu->renderVram ? g_ppu->renderVram : g_ppu->vram;
+        uint64_t hash = UINT64_C(14695981039346656037);
+        for (unsigned i = 0; i < 32; ++i) {
+            const uint16_t value = vram[0x3400 + row * 32 + i];
+            hash = (hash ^ (value & 255)) * UINT64_C(1099511628211);
+            hash = (hash ^ (value >> 8)) * UINT64_C(1099511628211);
+        }
+        const uint64_t expected = row < 24 ? UINT64_C(0x8fd4ca6a34b4e865) :
+                                             lower_rows[row - 24];
+        s_bg3_rows[row] = s_bg2_plane == 1 && PPU_mode(g_ppu) == 1 &&
+            PPU_bigTiles(g_ppu, 2) && g_ppu->bgXsc[2] == 0x34 &&
+            PPU_bgTileAdr(g_ppu, 2) == 0x2000 && hash == expected ? 1 : 2;
+    }
+    /* Original 512px foreground plane. Message boxes reuse this map
+     * (CODE_01DF45); their modified rows must never wrap into margins. */
+    WsShadowSetWorld(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
+    WsShadowSetScroll(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
+    return s_bg3_rows[row] == 1 ? real_tile : 0x0185;
 }
 
 /* Recover only the wrap epoch from WRAM. Fine phase comes from the PPU
@@ -136,6 +173,7 @@ uint16_t YoshiBg1MarginTile(int screen_x, uint32_t wrapped_y,
 static void BlackUnverifiedMargins(const Ppu *ppu, unsigned line, void *context) {
     (void)context;
     if (!(ppu->extraLeftCur || ppu->extraRightCur)) return;
+    memset(s_bg3_rows, 0, sizeof(s_bg3_rows));
     if (!(g_snes_ppu_dbg_layer_mask & 1) ||
         !((ppu->screenEnabled[0] | ppu->screenEnabled[1]) & 1)) return;
     int x, y;
@@ -314,15 +352,12 @@ static void InstallYoshiGsuAuditHook(void)
     }
 }
 
-/* Keep normal gameplay in its authentic field until added scene tiles have
- * verified world provenance. PPU's fallback is circular live VRAM, which can
- * expose stale tiles in an unqualified margin. Fixed-width overrides remain
- * available for reproducible renderer experiments. */
+/* The qualified scene family follows the usable drawable. Unknown scenes
+ * and the unauthored initial west edge retain native framing temporarily.
+ * Fixed-width overrides remain available for reproducible renderer tests. */
 void GamePrepareFrame(int drawable_w, int drawable_h,
                       int *frame_w, int *frame_h)
 {
-    (void)drawable_w;
-    (void)drawable_h;
     s_frame_width = *frame_w;
     const int fixed_extra = PpuWsExtraOverride();
     if (fixed_extra >= 0) {
@@ -331,6 +366,19 @@ void GamePrepareFrame(int drawable_w, int drawable_h,
     } else {
         *frame_w = 256;
         *frame_h = 224;
+        YoshiDisplayGeometry geometry;
+        if ((g_ram[0x118] == 0x0e || g_ram[0x118] == 0x0f) &&
+            KnownPlane(1, UINT64_C(0x5f9149de60fa58c4)) &&
+            yoshi_display_geometry(drawable_w, drawable_h, (YoshiInsets){0},
+                                   7.0 / 6.0, &geometry)) {
+            int extra = (geometry.logical_width - 256 + 1) / 2;
+            if (extra > 95) extra = 95; /* Native nine-bit OAM range. */
+            const unsigned x = g_ram[0x39] | ((unsigned)g_ram[0x3a] << 8);
+            /* No authored BG1 world exists west of zero. Until a scene
+             * extension is qualified there, keep its initial edge native. */
+            if (extra > 0 && x >= (unsigned)extra)
+                *frame_w = 256 + 2 * extra;
+        }
     }
     s_frame_width = *frame_w;
 
@@ -365,13 +413,12 @@ void GameBeginFrame(unsigned number)
         const unsigned address = 0x39u + (unsigned)layer * 4u;
         const uint32_t world_x = g_ram[address] | ((uint32_t)g_ram[address + 1] << 8);
         const uint32_t world_y = g_ram[address + 2] | ((uint32_t)g_ram[address + 3] << 8);
-        WsShadowSetWorld(layer, layer == 1 ? g_ppu->hScroll[layer] : world_x,
-                         layer == 1 ? g_ppu->vScroll[layer] : world_y);
+        WsShadowSetWorld(layer, layer == 1 || layer == 2 ? g_ppu->hScroll[layer] : world_x,
+                         layer == 1 || layer == 2 ? g_ppu->vScroll[layer] : world_y);
         WsShadowSetScroll(layer, g_ppu->hScroll[layer], g_ppu->vScroll[layer]);
-        /* BG1 contains an authentic world stream (and GSU-prefilled columns);
-         * key it by absolute map row. The layered/parallax backgrounds retain
-         * their existing viewport-follow behavior. */
-        WsShadowSetRetainHistory(layer, layer > 1);
+        /* BG1 resolves through the original level map. BG2/BG3 have their own
+         * PPU phase and authored-plane policies; no BG1 camera inheritance. */
+        WsShadowSetRetainHistory(layer, layer > 2);
         WsShadowSetWestKeep(layer, 40);
         WsShadowSetEastKeep(layer, 40);
     }
@@ -441,6 +488,16 @@ static void AuditShadowTiles(unsigned number)
 
 void GameEndFrame(const uint8_t *field, unsigned number)
 {
+    const char *directory = getenv("SNESRECOMP_WS_FRAME_DIR");
+    if (directory && AuditFrameSelected(getenv("SNESRECOMP_WS_FRAME_NUMBERS"), number)) {
+        char path[4096];
+        snprintf(path, sizeof(path), "%s/%u.bgrx", directory, number);
+        FILE *image = fopen(path, "wb");
+        if (image) {
+            fwrite(field, (size_t)s_frame_width * 224u * 4u, 1, image);
+            fclose(image);
+        }
+    }
     const char *frame_path = getenv("SNESRECOMP_WS_FRAME_FILE");
     const char *frame_number = getenv("SNESRECOMP_WS_FRAME_NUMBER");
     if (frame_path && frame_path[0] && frame_number &&
@@ -479,6 +536,9 @@ void GameDrawPpuFrame(void)
 {
     memset(s_map_rows, 0, sizeof(s_map_rows));
     s_bg2_plane = 0;
+    memset(s_bg3_rows, 0, sizeof(s_bg3_rows));
+    PpuSetWidescreenBg3Widen(g_ppu,
+        KnownPlane(1, UINT64_C(0x5f9149de60fa58c4)) ? 1 : 0);
     if (g_ppu->extraLeftCur || g_ppu->extraRightCur)
         snes_beam_frame_driver_draw_ppu_frame_observed(BlackUnverifiedMargins, NULL);
     else

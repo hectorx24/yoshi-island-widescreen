@@ -1,5 +1,7 @@
 # Yoshi's Island Android port — handoff for Sol
 
+**Continuation update:** this original Luna snapshot is now historical. Read `PROJECT_STATUS.md` for current state. Commits `dd4acac` and `b99d496` replaced the unsafe BG1 margin source with an exact per-field original-map resolver and fixed BG2's clipped mountains using its own authored plane/PPU phase. Opening-scene adaptive Android420x224 at2772x1272 passed with byte-identical native center. Current work additionally enables original BG3 foliage rows (native center unchanged); modified dialog rows remain blank. Other scenes/bosses and optional enhancements remain unfinished. Do not revert to the all-scene4:3 snapshot described below.
+
 Read `AGENTS.md` and `PROJECT_STATUS.md` first. Continue from the current checkout and verified evidence; do not restart research or treat 4:3 fallback as the widescreen deliverable. This file captures the broader user requirements and the latest renderer investigation.
 
 ## Goal and user decisions

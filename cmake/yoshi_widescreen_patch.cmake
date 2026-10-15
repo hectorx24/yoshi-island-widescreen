@@ -94,6 +94,25 @@ if(_yoshi_bg2_at EQUAL -1)
   string(REPLACE "${_yoshi_bg2_anchor}" "${_yoshi_bg2_resolver}"
     _yoshi_ws_source "${_yoshi_ws_source}")
 endif()
+set(_yoshi_bg3_anchor [[  /* Layered margin sources, exact-first:]])
+set(_yoshi_bg3_resolver [[  /* Yoshi: original BG3 plane only; message-box maps are never repeated. */
+  if (layerIndex == 2 && !getenv("SNESRECOMP_WS_BG3_LEGACY")) {
+    extern uint16_t YoshiBg3MarginTile(uint16_t, uint32_t);
+    return YoshiBg3MarginTile(realTile, wrappedY);
+  }
+
+  /* Layered margin sources, exact-first:]])
+string(FIND "${_yoshi_ws_source}" "YoshiBg3MarginTile" _yoshi_bg3_at)
+if(_yoshi_bg3_at EQUAL -1)
+  string(REPLACE "${_yoshi_bg3_anchor}" "${_yoshi_bg3_resolver}"
+    _yoshi_ws_source "${_yoshi_ws_source}")
+endif()
+string(REPLACE "if (layerIndex == 2) {\n    extern uint16_t YoshiBg3MarginTile"
+  "if (layerIndex == 2 && !getenv(\"SNESRECOMP_WS_BG3_LEGACY\")) {\n    extern uint16_t YoshiBg3MarginTile"
+  _yoshi_ws_source "${_yoshi_ws_source}")
+string(REPLACE "extern uint16_t YoshiBg3MarginTile(uint16_t);\n    return YoshiBg3MarginTile(realTile);"
+  "extern uint16_t YoshiBg3MarginTile(uint16_t, uint32_t);\n    return YoshiBg3MarginTile(realTile, wrappedY);"
+  _yoshi_ws_source "${_yoshi_ws_source}")
 file(WRITE "${_yoshi_ws_shadow}" "${_yoshi_ws_source}")
 unset(_yoshi_ws_shadow)
 unset(_yoshi_ws_source)

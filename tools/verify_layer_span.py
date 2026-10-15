@@ -18,6 +18,8 @@ p.add_argument('--wide-state', type=Path, required=True)
 p.add_argument('--native-state', type=Path, required=True)
 p.add_argument('--check-source-colors', action='store_true',
                help='Separately verify pre-color-math source colors for RGB differences')
+p.add_argument('--allow-source-animation', action='store_true',
+               help='Report changed original glyph pixels separately when map/character IDs are identical')
 a = p.parse_args()
 
 def phase(prefix):
@@ -45,7 +47,8 @@ wp, np = phase(a.wide_state), phase(a.native_state)
 dx, dy = ((wp[i] - np[i] + 512) % 1024 - 512 for i in (0, 1))
 good = bad = 0
 source_good = 0
-def source_color(prefix, phase_xy, sx, sy):
+source_animated = 0
+def source_color(prefix, phase_xy, sx, sy, details=False):
     if prefix not in source_color.cache:
         regs = json.loads(Path(str(prefix) + '.regs.json').read_text())
         source_color.cache[prefix] = (regs,
@@ -70,17 +73,20 @@ def source_color(prefix, phase_xy, sx, sy):
     if entry & 0x8000:
         py = (1 << shift) - 1 - py
     tile = ((entry & 1023) + (px >> 3) + (py >> 3) * 16) & 1023
-    # This oracle currently covers Mode 1's BG1/BG2 4bpp planes.
-    assert regs['bgmode'] & 7 == 1 and layer < 2
+    assert regs['bgmode'] & 7 == 1 and layer < 3
+    bpp = 2 if layer == 2 else 4
     char = ((regs['bg_tile_adr'] >> (layer * 4)) & 15) << 12
-    address = (char + tile * 16 + (py & 7)) & 32767
+    address = (char + tile * bpp * 4 + (py & 7)) & 32767
     lo = struct.unpack_from('<H', vr, address * 2)[0]
-    hi = struct.unpack_from('<H', vr, ((address + 8) & 32767) * 2)[0]
+    hi = struct.unpack_from('<H', vr, ((address + 8) & 32767) * 2)[0] if bpp == 4 else 0
     bit = 7 - (px & 7)
     color = ((lo >> bit) & 1) | (((lo >> (8 + bit)) & 1) << 1)
     color |= ((hi >> bit) & 1) << 2 | ((hi >> (8 + bit)) & 1) << 3
-    return None if not color else struct.unpack_from('<H', cg,
-        (((entry >> 10) & 7) * 16 + color) * 2)[0]
+    value = None if not color else struct.unpack_from('<H', cg,
+        (((entry >> 10) & 7) * (1 << bpp) + color) * 2)[0]
+    glyph = bytes(vr[((char + tile * bpp * 4 + i) & 32767) * 2 + j]
+                  for i in range(bpp * 4) for j in range(2))
+    return (value, entry, tile, glyph) if details else value
 source_color.cache = {}
 xs = range(-extra, 0) if a.side == 'left' else range(256, 256 + extra)
 for y in range(8, 216):
@@ -96,12 +102,18 @@ for y in range(8, 216):
             good += 1
         else:
             bad += 1
-            if a.check_source_colors and source_color(a.wide_state, wp, x, y) == \
-                    source_color(a.native_state, np, nx, ny):
-                source_good += 1
+            if a.check_source_colors:
+                c0 = source_color(a.wide_state, wp, x, y, True)
+                c1 = source_color(a.native_state, np, nx, ny, True)
+                if c0[0] == c1[0]:
+                    source_good += 1
+                elif a.allow_source_animation and c0[1:3] == c1[1:3] and c0[3] != c1[3]:
+                    source_animated += 1
 print(f'BG{a.layer} {a.side}: {good} same-world pixels exact; {bad} different; '
       f'PPU phases {wp} -> {np}')
 if a.check_source_colors:
     print(f'RGB differences with identical original pre-color-math pixels: '
           f'{source_good}/{bad}')
-raise SystemExit(bool(bad != source_good or not good))
+if a.allow_source_animation:
+    print(f'Original glyph pixels changed between captures (same map/character): {source_animated}')
+raise SystemExit(bool(bad != source_good + source_animated or not good))

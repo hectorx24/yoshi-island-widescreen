@@ -1,8 +1,10 @@
 # Yoshi Island Android port development
 
-Unfinished port. The current artifact is a Mac ARM64 SNESRecomp desktop test
-executable with hybrid AOT/interpreter execution. No Android APK or widescreen
-renderer is available yet. Read PROJECT_STATUS.md for verified coverage.
+Unfinished SNESRecomp port with Mac ARM64 and Android ARM64 builds. The opening
+scene has verified adaptive terrain and mountain rendering; other scenes remain
+unqualified. Android emulator testing at2772x1272 selected420x224 while preserving
+the original256px center exactly. Read PROJECT_STATUS.md for current coverage,
+APK/build commands, and remaining work; no physical-phone test is claimed.
 
 The owner-supplied USA v1.1 ROM is supported for this development target.
 It is never modified or committed. Its headerless hash is recorded in
