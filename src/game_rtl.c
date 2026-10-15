@@ -52,6 +52,81 @@ extern Ppu *g_ppu;
 extern Snes *g_snes;
 static int s_frame_width = 256;
 static bool s_gsu_audit_hook_installed;
+static int s_gsu_replay_audit_frame;
+static long s_gsu_replay_source_shift;
+
+/* Diagnostic private replay: verify that a copied GSU task reproduces the
+ * native MAP16 conversion without changing the live Super FX state. */
+static bool YoshiGsuReplayAuditPrepare(void *context, const SuperFx *source,
+                                       uint8_t *private_ram)
+{
+    (void)context;
+    s_gsu_replay_audit_frame = 0;
+    if (!g_ppu || !(g_ppu->extraLeftCur || g_ppu->extraRightCur) ||
+        (g_ram[0x0118] != 0x0e && g_ram[0x0118] != 0x0f))
+        return false;
+    extern int snes_frame_counter;
+    s_gsu_replay_audit_frame = snes_frame_counter;
+    const char *shift_text = getenv("SNESRECOMP_WS_GSU_REPLAY_SHIFT");
+    s_gsu_replay_source_shift = shift_text ? strtol(shift_text, NULL, 10) : 0;
+    if (s_gsu_replay_source_shift && source && source->ram && private_ram &&
+        source->ram_size >= 0x8000) {
+        /* The v1.1 task loader maps vertical MAP16 steps to +16 words in
+         * $7F8000 and horizontal neighbors to adjacent words. This optional
+         * experiment edits private task RAM only. */
+        for (unsigned row = 0; row < 12; ++row) {
+            const int index = 0x300 + (int)row * 16 +
+                             (int)s_gsu_replay_source_shift;
+            if (index < 0 || index >= 0x4000) continue;
+            const uint16_t map16 = g_ram[0x18000 + index * 2] |
+                                   ((uint16_t)g_ram[0x18001 + index * 2] << 8);
+            const unsigned address = 0x409eu + row * 0x40u;
+            private_ram[address] = (uint8_t)map16;
+            private_ram[address + 1] = (uint8_t)(map16 >> 8);
+        }
+    }
+    return true;
+}
+
+static void YoshiGsuReplayAuditComplete(void *context,
+                                        const SuperFx *replay)
+{
+    (void)context;
+    const char *path = getenv("SNESRECOMP_WS_GSU_REPLAY_FILE");
+    if (!path || !path[0] || !replay || !replay->ram || !g_snes ||
+        !g_snes->cart || !g_snes->cart->superfx)
+        return;
+    const SuperFx *live = g_snes->cart->superfx;
+    unsigned matches = 0;
+    unsigned mismatches = 0;
+    for (unsigned row = 0; row < 24; ++row) {
+        for (unsigned side = 0; side < 2; ++side) {
+            const unsigned address = (side ? 0x0deau : 0x0daau) + row * 2u;
+            const uint16_t a = replay->ram[address] |
+                               ((uint16_t)replay->ram[address + 1] << 8);
+            const uint16_t b = live->ram[address] |
+                               ((uint16_t)live->ram[address + 1] << 8);
+            if (a == b) ++matches;
+            else ++mismatches;
+        }
+    }
+    FILE *file = fopen(path, "a");
+    if (file) {
+        fprintf(file, "%d,%ld,%u,%u", s_gsu_replay_audit_frame,
+                s_gsu_replay_source_shift, matches, mismatches);
+        for (unsigned row = 0; row < 24; ++row) {
+            for (unsigned side = 0; side < 2; ++side) {
+                const unsigned address =
+                    (side ? 0x0deau : 0x0daau) + row * 2u;
+                const uint16_t value = replay->ram[address] |
+                    ((uint16_t)replay->ram[address + 1] << 8);
+                fprintf(file, ",%04x", value);
+            }
+        }
+        fputc('\n', file);
+        fclose(file);
+    }
+}
 
 /* Capture the exact Yoshi BG1 expander input after its Super FX pass. This
  * runs at STOP without redirecting or changing the guest GSU state. Records
@@ -74,10 +149,6 @@ static void YoshiGsuTaskAuditHook(SuperFx *fx, uint32_t pc24, void *context)
         const uint32_t camera_y = g_ram[0x3b] | ((uint32_t)g_ram[0x3c] << 8);
         const uint32_t tile_x = (camera_x >> 3) + 32u;
         const uint32_t tile_y = ((camera_y + 255u) / 256u) * 32u;
-        /* PrefillTile's public guard deliberately ignores retained-history
-         * layers. Temporarily lift only that guard for this synchronous seed;
-         * no shadow frame or renderer callback can run until it is restored. */
-        WsShadowSetRetainHistory(0, false);
         for (uint32_t row = 0; row < 24; ++row) {
             const uint32_t a = 0x0daau + row * 2u;
             const uint32_t b = 0x0deau + row * 2u;
@@ -86,8 +157,6 @@ static void YoshiGsuTaskAuditHook(SuperFx *fx, uint32_t pc24, void *context)
             WsShadowPrefillTile(0, tile_x, tile_y + row, left);
             WsShadowPrefillTile(0, tile_x + 1u, tile_y + row, right);
         }
-        WsShadowSetRetainHistory(0, true);
-
         /* Optional source/coordinate audit captured immediately after seed,
          * before the guest resumes and uploads its final tilemap to VRAM. */
         const char *audit_path = getenv("SNESRECOMP_WS_GSU_PREFILL_FILE");
@@ -154,34 +223,30 @@ static void InstallYoshiGsuAuditHook(void)
     if (superfx_set_pc_hook(g_snes->cart->superfx, 0x09fa26,
                             YoshiGsuTaskAuditHook, NULL))
         s_gsu_audit_hook_installed = true;
+    if (getenv("SNESRECOMP_WS_GSU_REPLAY_FILE")) {
+        SuperFx *fx = g_snes->cart->superfx;
+        superfx_set_enhancement_mode(fx,
+                                    kSuperFxEnhancement_PresentationReplay);
+        superfx_set_presentation_replay(fx, 0x09, 0xf9e8,
+                                        YoshiGsuReplayAuditPrepare,
+                                        YoshiGsuReplayAuditComplete, NULL);
+    }
 }
 
-/* Derive the native widened PPU field from the live landscape drawable only
- * while the USA v1.1 game-mode byte identifies tutorial/gameplay (0E/0F).
- * Menus and narrative scenes retain their original framing. Keep 224 scanlines
- * and guest timing unchanged; a fixed PPU override supports reproducible tests. */
+/* Keep normal gameplay in its authentic field until added scene tiles have
+ * verified world provenance. PPU's fallback is circular live VRAM, which can
+ * expose stale tiles in an unqualified margin. Fixed-width overrides remain
+ * available for reproducible renderer experiments. */
 void GamePrepareFrame(int drawable_w, int drawable_h,
                       int *frame_w, int *frame_h)
 {
+    (void)drawable_w;
+    (void)drawable_h;
     s_frame_width = *frame_w;
     const int fixed_extra = PpuWsExtraOverride();
     if (fixed_extra >= 0) {
         *frame_w = 256 + 2 * fixed_extra;
         *frame_h = 224;
-    } else if (g_ram[0x0118] == 0x0e || g_ram[0x0118] == 0x0f) {
-        YoshiDisplayGeometry geometry;
-        if (yoshi_display_geometry(drawable_w, drawable_h,
-                                   (YoshiInsets){0, 0, 0, 0}, 7.0 / 6.0,
-                                   &geometry)) {
-            int width = geometry.logical_width;
-            if (width < 256) width = 256;
-            if (width > kPpuBufWidth) width = kPpuBufWidth;
-            /* The native PPU allocates symmetric per-side margins. */
-            width = 256 + ((width - 256 + 1) & ~1);
-            if (width > kPpuBufWidth) width = kPpuBufWidth & ~1;
-            *frame_w = width;
-            *frame_h = 224;
-        }
     } else {
         *frame_w = 256;
         *frame_h = 224;
@@ -221,7 +286,10 @@ void GameBeginFrame(unsigned number)
         const uint32_t world_y = g_ram[address + 2] | ((uint32_t)g_ram[address + 3] << 8);
         WsShadowSetWorld(layer, world_x, world_y);
         WsShadowSetScroll(layer, g_ppu->hScroll[layer], g_ppu->vScroll[layer]);
-        WsShadowSetRetainHistory(layer, true);
+        /* BG1 contains an authentic world stream (and GSU-prefilled columns);
+         * key it by absolute map row. The layered/parallax backgrounds retain
+         * their existing viewport-follow behavior. */
+        WsShadowSetRetainHistory(layer, layer != 0);
         WsShadowSetWestKeep(layer, 40);
         WsShadowSetEastKeep(layer, 40);
     }

@@ -10,6 +10,7 @@ if(ANDROID)
   add_subdirectory(${YOSHI_SDL_SOURCE} ${CMAKE_BINARY_DIR}/sdl3)
 endif()
 set(SNESRECOMP_ROOT "${CMAKE_SOURCE_DIR}/upstream/snesrecomp")
+include(${CMAKE_SOURCE_DIR}/cmake/yoshi_widescreen_patch.cmake)
 include(${SNESRECOMP_ROOT}/runner/runner.cmake)
 set(YOSHI_SOURCES ${SNESRECOMP_RUNNER_SOURCES}
   src/main.c src/game_rtl.c src/host_contract.c src/display_geometry.c)
