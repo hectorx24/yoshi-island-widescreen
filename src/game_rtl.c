@@ -60,6 +60,64 @@ static bool s_gsu_audit_hook_installed;
 static void YoshiGsuTaskAuditHook(SuperFx *fx, uint32_t pc24, void *context)
 {
     (void)context;
+    /* The v1.1 CODE_109089 -> FXCODE_09F9E8 column task fills one 16px
+     * MAP16 column across the far 256px screen. Each MAP16 row becomes two
+     * 8px PPU rows in the two halves at $0DAA/$0DEA. For a rightward column,
+     * the VRAM map math in CODE_109089 places it 32 tiles past camera X; its
+     * lower-screen rows begin at the next 256px boundary. Seed only while the
+     * adaptive PPU is active. These are game-produced entries, and native
+     * VRAM writes replace them if the game updates a cell later in the field. */
+    if (fx && fx->ram && fx->ram_size >= 0x0e20 && g_ppu &&
+        (g_ppu->extraLeftCur || g_ppu->extraRightCur) &&
+        (g_ram[0x0118] == 0x0e || g_ram[0x0118] == 0x0f)) {
+        const uint32_t camera_x = g_ram[0x39] | ((uint32_t)g_ram[0x3a] << 8);
+        const uint32_t camera_y = g_ram[0x3b] | ((uint32_t)g_ram[0x3c] << 8);
+        const uint32_t tile_x = (camera_x >> 3) + 32u;
+        const uint32_t tile_y = ((camera_y + 255u) / 256u) * 32u;
+        /* PrefillTile's public guard deliberately ignores retained-history
+         * layers. Temporarily lift only that guard for this synchronous seed;
+         * no shadow frame or renderer callback can run until it is restored. */
+        WsShadowSetRetainHistory(0, false);
+        for (uint32_t row = 0; row < 24; ++row) {
+            const uint32_t a = 0x0daau + row * 2u;
+            const uint32_t b = 0x0deau + row * 2u;
+            const uint16_t left = fx->ram[a] | ((uint16_t)fx->ram[a + 1] << 8);
+            const uint16_t right = fx->ram[b] | ((uint16_t)fx->ram[b + 1] << 8);
+            WsShadowPrefillTile(0, tile_x, tile_y + row, left);
+            WsShadowPrefillTile(0, tile_x + 1u, tile_y + row, right);
+        }
+        WsShadowSetRetainHistory(0, true);
+
+        /* Optional source/coordinate audit captured immediately after seed,
+         * before the guest resumes and uploads its final tilemap to VRAM. */
+        const char *audit_path = getenv("SNESRECOMP_WS_GSU_PREFILL_FILE");
+        if (audit_path && audit_path[0]) {
+            extern int snes_frame_counter;
+            FILE *audit = fopen(audit_path, "a");
+            if (audit) {
+                for (uint32_t row = 0; row < 24; ++row) {
+                    const uint32_t a = 0x0daau + row * 2u;
+                    const uint32_t b = 0x0deau + row * 2u;
+                    uint16_t entry = 0;
+                    int state = WsShadowDebugCell(0, tile_x, tile_y + row,
+                                                  &entry);
+                    fprintf(audit, "%d,%u,%u,%u,%d,%04x,%04x\n",
+                            snes_frame_counter, tile_x, tile_y, row, state,
+                            (uint16_t)(fx->ram[a] | ((uint16_t)fx->ram[a + 1] << 8)),
+                            entry);
+                    state = WsShadowDebugCell(0, tile_x + 1u,
+                                              tile_y + row, &entry);
+                    fprintf(audit, "%d,%u,%u,%u,%d,%04x,%04x\n",
+                            snes_frame_counter, tile_x + 1u, tile_y, row,
+                            state,
+                            (uint16_t)(fx->ram[b] | ((uint16_t)fx->ram[b + 1] << 8)),
+                            entry);
+                }
+                fclose(audit);
+            }
+        }
+    }
+
     const char *path = getenv("SNESRECOMP_WS_GSU_TASK_FILE");
     const char *range = getenv("SNESRECOMP_WS_GSU_TASK_RANGE");
     if (!path || !path[0] || !range) return;
@@ -90,8 +148,7 @@ static void YoshiGsuTaskAuditHook(SuperFx *fx, uint32_t pc24, void *context)
 
 static void InstallYoshiGsuAuditHook(void)
 {
-    if (s_gsu_audit_hook_installed ||
-        !getenv("SNESRECOMP_WS_GSU_TASK_FILE") || !g_snes ||
+    if (s_gsu_audit_hook_installed || !g_snes ||
         !g_snes->cart || !g_snes->cart->superfx)
         return;
     if (superfx_set_pc_hook(g_snes->cart->superfx, 0x09fa26,
