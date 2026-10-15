@@ -120,6 +120,67 @@ void GameBeginFrame(unsigned number)
     WsShadowFrame(g_ppu);
 }
 
+static bool AuditFrameSelected(const char *frames, unsigned number)
+{
+    if (!frames || !frames[0]) return false;
+    const char *cursor = frames;
+    while (*cursor) {
+        char *end = NULL;
+        unsigned long value = strtoul(cursor, &end, 10);
+        if (end == cursor) {
+            ++cursor;
+            continue;
+        }
+        if (value == number) return true;
+        cursor = end;
+        while (*cursor && *cursor != ',') ++cursor;
+        if (*cursor == ',') ++cursor;
+    }
+    return false;
+}
+
+/* Opt-in exact tile audit for routes where a former margin later enters the
+ * native view. Region coordinates are world tile indices; the API is read-only
+ * and reports whether each entry came from real PPU writes or a prefill guess. */
+static void AuditShadowTiles(unsigned number)
+{
+    const char *frames = getenv("SNESRECOMP_WS_AUDIT_FRAMES");
+    const char *rect = getenv("SNESRECOMP_WS_AUDIT_RECT");
+    const char *path = getenv("SNESRECOMP_WS_AUDIT_FILE");
+    if (!path || !path[0] || !AuditFrameSelected(frames, number) || !rect)
+        return;
+
+    char *end = NULL;
+    long x0 = strtol(rect, &end, 10);
+    if (end == rect || *end != ',') return;
+    const char *cursor = end + 1;
+    long x1 = strtol(cursor, &end, 10);
+    if (end == cursor || *end != ',') return;
+    cursor = end + 1;
+    long y0 = strtol(cursor, &end, 10);
+    if (end == cursor || *end != ',') return;
+    cursor = end + 1;
+    long y1 = strtol(cursor, &end, 10);
+    if (end == cursor || *end || x0 < 0 || x1 < x0 || y0 < 0 || y1 < y0)
+        return;
+
+    const char *layer_text = getenv("SNESRECOMP_WS_AUDIT_LAYER");
+    long layer = layer_text ? strtol(layer_text, NULL, 10) : 1;
+    if (layer < 1 || layer > 4) return;
+    FILE *file = fopen(path, "a");
+    if (!file) return;
+    for (long ty = y0; ty <= y1; ++ty) {
+        for (long tx = x0; tx <= x1; ++tx) {
+            uint16_t entry = 0;
+            int state = WsShadowDebugCell((int)layer - 1, (uint32_t)tx,
+                                          (uint32_t)ty, &entry);
+            fprintf(file, "%u,%ld,%ld,%d,%04x\n", number, tx, ty, state,
+                    entry);
+        }
+    }
+    fclose(file);
+}
+
 void GameEndFrame(const uint8_t *field, unsigned number)
 {
     const char *frame_path = getenv("SNESRECOMP_WS_FRAME_FILE");
@@ -132,6 +193,7 @@ void GameEndFrame(const uint8_t *field, unsigned number)
             fclose(image);
         }
     }
+    AuditShadowTiles(number);
     if (!getenv("SNESRECOMP_WS_DIAG") || number % 120 != 0) return;
     const char *path = getenv("SNESRECOMP_WS_DIAG_FILE");
     if (!path || !path[0]) return;
