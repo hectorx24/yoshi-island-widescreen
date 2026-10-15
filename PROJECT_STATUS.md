@@ -25,7 +25,7 @@
 - src/main.c: shared host identity/entry and native widescreen callback wiring; src/game_rtl.c: beam frame driver, aspect-driven frame sizing and Yoshi camera/world-shadow hooks; config/bank00.cfg: dispatcher exclusion; src/display_geometry.c: tested geometry component.
 - CMakeLists.txt: desktop executable/Android shared-library wiring; android/AndroidManifest.xml and android/java/com/hector/yoshi/YoshiActivity.java: direct-launch wrapper, ROM extraction, immersive mode, developer regression intent.
 - tools/build_android.py: manual javac/d8/aapt/signing pipeline; tools/create_test_avd.py: isolated AVD; tools/android_smoke.py: verified 4:3 install/replay hashes plus adaptive width on emulator. Explicitly removes stale guest captures before each replay; wildcard cleanup through `adb shell` was unreliable.
-- Latest commit 6b5ca4e (Yoshi layer origins and PPU shadow wiring); prior 7b19f4c (Android/widescreen verification handoff), f08465b (Android ARM64 port and adaptive PPU width), cf78b6e (handoff workflow). No ROMs, extracted assets, APKs, or signing keys are tracked.
+- Latest implementation commit 6b5ca4e (Yoshi layer origins and PPU shadow wiring); latest handoff commit 4c8ea0f records the unresolved streamed-margin artifact and rejected echo filter. Prior 7b19f4c (Android/widescreen verification), f08465b (Android ARM64 port), cf78b6e (handoff workflow). No ROMs, extracted assets, APKs, or signing keys are tracked.
 
 ## Commands and next concrete action
 - Build/test: sh tools/build.sh; sh tools/test.sh; python3 tools/regression_boot.py --rom '<ROM>'.
@@ -44,7 +44,7 @@
 
 <!-- checkpoint:begin -->
 ## Automatic checkpoint
-- Checked 2026-10-15T01:13:07+00:00; Widened tutorial run verified; global east-echo policy rejected as ineffective
-- Git base at checkpoint: 6b5ca4e; 1 changed/untracked paths (run git status).
+- Checked 2026-10-15T01:13:14+00:00; Handoff records committed Android path, adaptive PPU widening, and unresolved streamed BG margin artifacts
+- Git base at checkpoint: 4c8ea0f; 1 changed/untracked paths (run git status).
 - Last supported quota observation (2026-10-15T00:54:48+00:00): five_hour: 95% remaining; weekly: 84% remaining.
 <!-- checkpoint:end -->
