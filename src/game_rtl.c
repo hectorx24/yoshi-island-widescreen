@@ -56,6 +56,27 @@ static int s_frame_width = 256;
 static bool s_gsu_audit_hook_installed;
 static int s_gsu_replay_audit_frame;
 static uint8_t s_map_rows[256];
+static uint8_t s_bg2_plane;
+
+uint16_t YoshiBg2MarginTile(uint16_t real_tile) {
+    if (!s_bg2_plane) {
+        bool valid = PPU_mode(g_ppu) == 1 && g_ppu->bgXsc[1] == 0x3a &&
+                     PPU_bgTileAdr(g_ppu, 1) == 0x7000;
+        const uint16_t *vram = g_ppu->renderVram ? g_ppu->renderVram : g_ppu->vram;
+        uint64_t hash = UINT64_C(14695981039346656037);
+        for (unsigned i = 0x3800; valid && i < 0x4000; ++i) {
+            hash = (hash ^ (vram[i] & 255)) * UINT64_C(1099511628211);
+            hash = (hash ^ (vram[i] >> 8)) * UINT64_C(1099511628211);
+        }
+        /* Exact opening-scene map: four route captures showed identical
+         * 512x1024 authored data, with distinct content in both 256px halves.
+         * This signature grants no plane policy to other scenes. */
+        s_bg2_plane = valid && hash == UINT64_C(0x5f9149de60fa58c4) ? 1 : 2;
+    }
+    WsShadowSetWorld(1, g_ppu->hScroll[1], g_ppu->vScroll[1]);
+    WsShadowSetScroll(1, g_ppu->hScroll[1], g_ppu->vScroll[1]);
+    return s_bg2_plane == 1 ? real_tile : 0x18ee;
+}
 
 /* Recover only the wrap epoch from WRAM. Fine phase comes from the PPU
  * register actually used to render this line, independently for each layer. */
@@ -344,12 +365,13 @@ void GameBeginFrame(unsigned number)
         const unsigned address = 0x39u + (unsigned)layer * 4u;
         const uint32_t world_x = g_ram[address] | ((uint32_t)g_ram[address + 1] << 8);
         const uint32_t world_y = g_ram[address + 2] | ((uint32_t)g_ram[address + 3] << 8);
-        WsShadowSetWorld(layer, world_x, world_y);
+        WsShadowSetWorld(layer, layer == 1 ? g_ppu->hScroll[layer] : world_x,
+                         layer == 1 ? g_ppu->vScroll[layer] : world_y);
         WsShadowSetScroll(layer, g_ppu->hScroll[layer], g_ppu->vScroll[layer]);
         /* BG1 contains an authentic world stream (and GSU-prefilled columns);
          * key it by absolute map row. The layered/parallax backgrounds retain
          * their existing viewport-follow behavior. */
-        WsShadowSetRetainHistory(layer, layer != 0);
+        WsShadowSetRetainHistory(layer, layer > 1);
         WsShadowSetWestKeep(layer, 40);
         WsShadowSetEastKeep(layer, 40);
     }
@@ -456,6 +478,7 @@ void GameRunOneFrame(void)
 void GameDrawPpuFrame(void)
 {
     memset(s_map_rows, 0, sizeof(s_map_rows));
+    s_bg2_plane = 0;
     if (g_ppu->extraLeftCur || g_ppu->extraRightCur)
         snes_beam_frame_driver_draw_ppu_frame_observed(BlackUnverifiedMargins, NULL);
     else

@@ -81,6 +81,19 @@ if(_yoshi_margin_at EQUAL -1)
   string(REPLACE "${_yoshi_margin_anchor}" "${_yoshi_margin_resolver}"
     _yoshi_ws_source "${_yoshi_ws_source}")
 endif()
+set(_yoshi_bg2_anchor [[  /* Layered margin sources, exact-first:]])
+set(_yoshi_bg2_resolver [[  /* Yoshi: verified BG2 plane uses its authored 512px map at its own phase. */
+  if (layerIndex == 1) {
+    extern uint16_t YoshiBg2MarginTile(uint16_t);
+    return YoshiBg2MarginTile(realTile);
+  }
+
+  /* Layered margin sources, exact-first:]])
+string(FIND "${_yoshi_ws_source}" "YoshiBg2MarginTile" _yoshi_bg2_at)
+if(_yoshi_bg2_at EQUAL -1)
+  string(REPLACE "${_yoshi_bg2_anchor}" "${_yoshi_bg2_resolver}"
+    _yoshi_ws_source "${_yoshi_ws_source}")
+endif()
 file(WRITE "${_yoshi_ws_shadow}" "${_yoshi_ws_source}")
 unset(_yoshi_ws_shadow)
 unset(_yoshi_ws_source)
