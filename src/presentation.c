@@ -171,7 +171,7 @@ void YoshiPresentationReset(void) {
 }
 
 #if SNESRECOMP_SDL3
-static bool Capture(SDL_Renderer *renderer, const char *path, int width, int height) {
+static bool Capture(SDL_Renderer *renderer, const char *path, int width, int height, const SDL_Rect *destination) {
     extern int snes_frame_counter;
     SDL_Surface *read = SDL_RenderReadPixels(renderer, NULL);
     SDL_Surface *pixels = read ? SDL_ConvertSurface(read, SDL_PIXELFORMAT_ARGB8888) : NULL;
@@ -187,8 +187,9 @@ static bool Capture(SDL_Renderer *renderer, const char *path, int width, int hei
         file = fopen(metadata, "w");
         if (file) {
             fprintf(file, "{\"frame\":%d,\"width\":%d,\"height\":%d,\"source_width\":%d,"
-                "\"source_height\":%d,\"source_fnv\":\"%08x\",\"applied\":%d}\n",
-                snes_frame_counter, pixels->w, pixels->h, width, height, s_source_hash, s_applied);
+                "\"source_height\":%d,\"source_fnv\":\"%08x\",\"applied\":%d,\"viewport\":[%d,%d,%d,%d]}\n",
+                snes_frame_counter, pixels->w, pixels->h, width, height, s_source_hash, s_applied,
+                destination->x, destination->y, destination->w, destination->h);
             fclose(file);
             success = true;
         }
@@ -209,7 +210,7 @@ void YoshiCapturePresentation(SDL_Renderer *renderer, SDL_Texture *texture,
     extern int snes_frame_counter;
     if (captured || !path || !number || snes_frame_counter < atoi(number)) return;
     if (!getenv("SNESRECOMP_PRESENT_TEST_CYCLE")) {
-        captured = Capture(renderer, path, source->w, source->h);
+        captured = Capture(renderer, path, source->w, source->h, destination);
         return;
     }
     const int old_soft = atomic_load(&s_soft), old_lighting = atomic_load(&s_lighting);
@@ -222,7 +223,7 @@ void YoshiCapturePresentation(SDL_Renderer *renderer, SDL_Texture *texture,
             Draw(renderer, texture, source, destination, 0, 0);
         char variant[4096];
         snprintf(variant, sizeof(variant), "%s.%s", path, names[i]);
-        success = Capture(renderer, variant, source->w, source->h) && success;
+        success = Capture(renderer, variant, source->w, source->h, destination) && success;
     }
     Configure(old_soft, old_lighting);
     SDL_RenderClear(renderer);

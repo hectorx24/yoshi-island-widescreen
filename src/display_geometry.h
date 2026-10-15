@@ -13,3 +13,9 @@ typedef struct {
  */
 bool yoshi_display_geometry(int width, int height, YoshiInsets insets,
                             double pixel_aspect, YoshiDisplayGeometry *out);
+typedef struct { int x, y, width, height; } YoshiViewport;
+/* Fill a qualified adaptive field without changing SNES pixel aspect. Only
+ * crop the sub-two-pixel horizontal surplus from symmetric PPU rounding. */
+bool yoshi_adaptive_viewport(int frame_width, int frame_height,
+                             int drawable_width, int drawable_height,
+                             YoshiViewport *out);

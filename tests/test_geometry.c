@@ -19,5 +19,14 @@ int main(void) {
   assert(!yoshi_display_geometry(10,10,(YoshiInsets){10,0,0,0},1,&g));
   assert(!yoshi_display_geometry(10,10,(YoshiInsets){0},NAN,&g));
   assert(!yoshi_display_geometry(10,10,(YoshiInsets){-1,0,0,0},1,&g));
+  YoshiViewport view;
+  assert(yoshi_adaptive_viewport(420,224,2772,1272,&view));
+  assert(view.height==1272 && view.y==0 && view.width==2783 && view.x==-5);
+  assert(view.x<=0 && view.x+view.width>=2772);
+  assert(!yoshi_adaptive_viewport(256,224,2772,1272,&view));
+  assert(!yoshi_adaptive_viewport(342,224,2772,1272,&view));
+  assert(!yoshi_adaptive_viewport(420,224,1920,1080,&view));
+  assert(!yoshi_adaptive_viewport(446,224,4000,1200,&view));
+  assert(!yoshi_adaptive_viewport(420,224,0,1272,&view));
   return 0;
 }

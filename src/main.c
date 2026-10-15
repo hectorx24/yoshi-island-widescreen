@@ -29,6 +29,7 @@
 #include "game_rtl.h"
 #include "presentation.h"
 #include "achievements.h"
+#include "display_geometry.h"
 #include "snesrecomp_rom_identity.h"  /* generated from rom_identity.txt */
 
 #ifndef __ANDROID__
@@ -44,6 +45,13 @@
 #define SNES_GAME_VERSION "dev"
 #endif
 
+static void YoshiComputeViewport(int fw, int fh, int dw, int dh,
+                                  SnesDisplayViewport *viewport) {
+    YoshiViewport fitted;
+    if (yoshi_adaptive_viewport(fw, fh, dw, dh, &fitted))
+        *viewport = (SnesDisplayViewport){fitted.x, fitted.y, fitted.width, fitted.height};
+}
+
 static const SnesDesktopHostGame kGameHost = {
     .display_name        = "Yoshi's Island",
     .window_title        = "Yoshi's Island SNES",
@@ -58,6 +66,7 @@ static const SnesDesktopHostGame kGameHost = {
     .widescreen_supported = 1,
     .native_widescreen    = 1,
     .prepare_frame        = &GamePrepareFrame,
+    .compute_viewport     = &YoshiComputeViewport,
     .begin_sim_frame      = &GameBeginFrame,
     .end_sim_frame        = &GameEndFrame,
     .draw_frame           = &YoshiComposeFrame,

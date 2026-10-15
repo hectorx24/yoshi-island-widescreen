@@ -34,6 +34,7 @@ call('install','-r',str(root/'local/android/artifacts/yoshi-usa11-arm64-dev.apk'
 call('shell','am','force-stop',package)
 call('shell','run-as',package,'rm','-f','files/captures/step08.fb.bgrx',
      'files/captures/wide-after_move.bgrx','files/captures/adaptive-width.txt')
+call('shell','run-as',package,'rm','-f','files/viewport.bgrx','files/viewport.bgrx.json')
 call('shell','am','start','-W','-n',package+'/.YoshiActivity','--ez','regression','true',
      '--ez','adaptive','true','--ez','level_test','true')
 deadline=time.monotonic()+150
@@ -41,7 +42,8 @@ while time.monotonic()<deadline:
     r=call('shell','run-as',package,'test','-e','files/captures/step08.info.json',check=False)
     # A prior .info file is insufficient; also require the freshly removed image.
     image=call('shell','run-as',package,'test','-e','files/captures/step08.fb.bgrx',check=False)
-    if r.returncode == image.returncode == 0:break
+    presented=call('shell','run-as',package,'test','-e','files/viewport.bgrx.json',check=False)
+    if r.returncode == image.returncode == presented.returncode == 0:break
     time.sleep(1)
 else:raise SystemExit('Android level-route timed out')
 wide=private('wide-after_move.bgrx'); info=json.loads(private('step08.info.json'))
@@ -51,11 +53,17 @@ assert width==420, f'Phone-aspect level scene did not expand: {width}'
 extra=(width-256)//2
 center=b''.join(wide[(y*width+extra)*4:(y*width+extra+256)*4] for y in range(224))
 assert center==native, 'Android wide level differs from independently captured desktop native center'
+meta=call('exec-out','run-as',package,'cat','files/viewport.bgrx.json').stdout
+viewport=json.loads(meta)
+x,y,w,h=viewport['viewport']
+assert x<=0 and y==0 and x+w>=2772 and h==1272, f'Unfilled phone viewport: {viewport}'
+assert w==2783 and x==-5, f'Unexpected SNES pixel-aspect crop: {viewport}'
+(out/'viewport.json').write_bytes(meta)
 (out/'wide.bgrx').write_bytes(wide)
 (out/'adaptive-width.txt').write_bytes(private('adaptive-width.txt'))
 (out/'verified.json').write_text(json.dumps(dict(frame=8020,width=width,height=224,
     native_center_different_pixels=0,native_reference=str(a.native_prefix)),indent=2)+'\n')
 call('shell','input','keyevent','KEYCODE_HOME')
-print('Android level1-1: 420x224 at2772x1272; center byte-identical to independent native desktop replay')
+print('Android level1-1: 420x224 at2772x1272; center byte-identical to independent native desktop replay; GPU viewport fills display at original pixel aspect')
 subprocess.run(['python3',str(root/'tools/checkpoint.py'),'--event',
     'Android level1-1 phone-aspect420x224 matches independent desktop native center exactly'],check=True)

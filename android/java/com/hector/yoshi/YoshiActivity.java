@@ -24,6 +24,10 @@ public final class YoshiActivity extends SDLActivity {
             nativeSetenv("SNESRECOMP_PRESENT_CAPTURE",
                 new File(getFilesDir(), "presentation.bgrx").getPath());
         }
+        if (getIntent().getBooleanExtra("level_test", false)) {
+            nativeSetenv("SNESRECOMP_PRESENT_FRAME", "8020");
+            nativeSetenv("SNESRECOMP_PRESENT_CAPTURE", new File(getFilesDir(), "viewport.bgrx").getPath());
+        }
         configurePresentation(soft, lighting);
         YoshiAchievements.attach(this);
         if (getIntent().getBooleanExtra("save_diag", false))

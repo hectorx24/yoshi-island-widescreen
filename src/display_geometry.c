@@ -17,3 +17,19 @@ bool yoshi_display_geometry(int width, int height, YoshiInsets insets,
     ((double)w - 256.0 * scale * par) / 2.0, 256.0 * scale * par};
   return true;
 }
+bool yoshi_adaptive_viewport(int frame_width, int frame_height,
+                             int drawable_width, int drawable_height,
+                             YoshiViewport *out) {
+  if (!out || frame_width <= 256 || frame_height != 224 ||
+      drawable_width <= 0 || drawable_height <= 0) return false;
+  double scale = (double)drawable_height / frame_height;
+  double full = frame_width * (7.0 / 6.0) * scale;
+  double surplus = full - drawable_width;
+  /* Fixed test fields, native fallback and OAM-capped ultra-wide fields keep
+   * the framework viewport. Never crop real gameplay to fill a narrower screen. */
+  if (!isfinite(full) || full > INT_MAX || surplus < 0 ||
+      surplus >= 2.0 * (7.0 / 6.0) * scale + 0.001) return false;
+  int width = (int)ceil(full);
+  *out = (YoshiViewport){(drawable_width - width) / 2, 0, width, drawable_height};
+  return true;
+}
