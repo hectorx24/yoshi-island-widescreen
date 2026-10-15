@@ -60,6 +60,7 @@ static int s_gsu_replay_audit_frame;
 static uint8_t s_map_rows[256];
 static uint8_t s_bg2_plane;
 static uint8_t s_bg3_rows[32];
+static bool s_boundary_extension;
 
 static bool KnownPlane(unsigned layer, uint64_t expected) {
     if (!g_ppu || PPU_mode(g_ppu) != 1 || !PPU_bigTiles(g_ppu, layer) ||
@@ -100,6 +101,26 @@ static bool KnownBackground(void) {
         if (vram[0x3800 + i] != (authored[i * 2] | (unsigned)authored[i * 2 + 1] << 8))
             return false;
     return true;
+}
+
+/* A decorative continuation only where 1-1's authored world ends at x=0.
+ * Its original first32px ground strip has a continuous opaque silhouette at
+ * the wrap seam. Exact MAP16 column provenance guards the entire strip;
+ * there is no new collision/simulation space and no global edge-clamp rule. */
+static bool KnownBoundaryExtension(void) {
+    if (!g_snes || !g_snes->cart || !g_snes->cart->superfx ||
+        g_ram[0x118] != 0x0f || g_ram[0x218] || g_ram[0x219] ||
+        g_ram[0x21a] || g_ram[0x21b] || g_ram[0x136] != 12 ||
+        g_ram[0x137] || g_ram[0x13a] != 29 || g_ram[0x13b]) return false;
+    const uint8_t *gsu = g_snes->cart->superfx->ram;
+    uint64_t hash = UINT64_C(14695981039346656037);
+    for (unsigned y = 0; y < 128; ++y) {
+        const unsigned screen = gsu[0x0caa + (y >> 4) * 16] & 63;
+        const unsigned map = 0x18000 + screen * 512 + (y & 15) * 32;
+        for (unsigned byte = 0; byte < 4; ++byte)
+            hash = (hash ^ g_ram[map + byte]) * UINT64_C(1099511628211);
+    }
+    return hash == UINT64_C(0x7944d8370f1fef5b);
 }
 
 uint16_t YoshiBg2MarginTile(uint16_t real_tile) {
@@ -189,11 +210,14 @@ uint16_t YoshiBg1MarginTile(int screen_x, uint32_t wrapped_y,
                            uint16_t hscroll) {
     int x, y;
     uint16_t tile;
-    if (VerifiedMapRow(wrapped_y, hscroll, &x, &y) && x + screen_x >= 0 &&
-        yoshi_bg1_tile(g_ram, g_snes->cart->superfx->ram,
-                       g_snes->cart->rom, g_snes->cart->romSize,
-                       (unsigned)(x + screen_x) / 8, (unsigned)y / 8, &tile))
-        return tile;
+    if (VerifiedMapRow(wrapped_y, hscroll, &x, &y)) {
+        int source_x = x + screen_x;
+        if (source_x < 0 && s_boundary_extension)
+            source_x = (source_x % 32 + 32) % 32;
+        if (source_x >= 0 && yoshi_bg1_tile(g_ram, g_snes->cart->superfx->ram,
+                g_snes->cart->rom, g_snes->cart->romSize,
+                (unsigned)source_x / 8, (unsigned)y / 8, &tile)) return tile;
+    }
     return 0x18ff;
 }
 
@@ -209,7 +233,7 @@ static void BlackUnverifiedMargins(const Ppu *ppu, unsigned line, void *context)
     uint8_t *row = ppu->renderBuffer + (line - 1) * ppu->renderPitch;
     for (int sx = -ppu->extraLeftCur; sx < 256 + ppu->extraRightCur; ++sx) {
         if (sx >= 0 && sx < 256) continue;
-        if (!valid || x + sx < 0 || x + sx >= 4096) {
+        if (!valid || (x + sx < 0 && !s_boundary_extension) || x + sx >= 4096) {
             uint8_t *pixel = row + (sx + ppu->extraLeftRight) * 4;
             pixel[0] = pixel[1] = pixel[2] = 0;
         }
@@ -380,7 +404,8 @@ static void InstallYoshiGsuAuditHook(void)
 }
 
 /* The qualified scene family follows the usable drawable. Unknown scenes
- * and the unauthored initial west edge retain native framing temporarily.
+ * and unauthored west edges retain native framing, except1-1's verified
+ * original-art decorative boundary continuation.
  * Fixed-width overrides remain available for reproducible renderer tests. */
 void GamePrepareFrame(int drawable_w, int drawable_h,
                       int *frame_w, int *frame_h)
@@ -401,9 +426,9 @@ void GamePrepareFrame(int drawable_w, int drawable_h,
             int extra = (geometry.logical_width - 256 + 1) / 2;
             if (extra > 95) extra = 95; /* Native nine-bit OAM range. */
             const unsigned x = g_ram[0x39] | ((unsigned)g_ram[0x3a] << 8);
-            /* No authored BG1 world exists west of zero. Until a scene
-             * extension is qualified there, keep its initial edge native. */
-            if (extra > 0 && x >= (unsigned)extra)
+            /* No playable BG1 world exists west of zero. Only1-1 has
+             * a separately qualified original-art continuation there. */
+            if (extra > 0 && (x >= (unsigned)extra || KnownBoundaryExtension()))
                 *frame_w = 256 + 2 * extra;
         }
     }
@@ -567,6 +592,7 @@ void GameDrawPpuFrame(void)
 {
     memset(s_map_rows, 0, sizeof(s_map_rows));
     s_bg2_plane = 0;
+    s_boundary_extension = KnownBoundaryExtension();
     memset(s_bg3_rows, 0, sizeof(s_bg3_rows));
     PpuSetWidescreenBg3Widen(g_ppu,
         (KnownPlane(1, UINT64_C(0x5f9149de60fa58c4)) ||

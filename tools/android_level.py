@@ -10,6 +10,7 @@ import time
 root = Path(__file__).resolve().parents[1]
 p = argparse.ArgumentParser(description=__doc__)
 p.add_argument('--native-prefix', type=Path, required=True)
+p.add_argument('--initial-native-prefix', type=Path)
 p.add_argument('--display-size', default='2772x1272')
 a = p.parse_args()
 import re
@@ -33,7 +34,7 @@ atexit.register(lambda: call('shell','wm','size',restore,check=False))
 call('install','-r',str(root/'local/android/artifacts/yoshi-usa11-arm64-dev.apk'))
 call('shell','am','force-stop',package)
 call('shell','run-as',package,'rm','-f','files/captures/step08.fb.bgrx',
-     'files/captures/wide-after_move.bgrx','files/captures/adaptive-width.txt')
+     'files/captures/wide-after_move.bgrx','files/captures/7819.bgrx','files/captures/adaptive-width.txt')
 call('shell','run-as',package,'rm','-f','files/viewport.bgrx','files/viewport.bgrx.json')
 call('shell','am','start','-W','-n',package+'/.YoshiActivity','--ez','regression','true',
      '--ez','adaptive','true','--ez','level_test','true')
@@ -59,6 +60,14 @@ x,y,w,h=viewport['viewport']
 assert x<=0 and y==0 and x+w>=2772 and h==1272, f'Unfilled phone viewport: {viewport}'
 assert w==2783 and x==-5, f'Unexpected SNES pixel-aspect crop: {viewport}'
 (out/'viewport.json').write_bytes(meta)
+if a.initial_native_prefix:
+    reference=Path(str(a.initial_native_prefix)+'.fb.bgrx').read_bytes()
+    initial=private('7819.bgrx')
+    assert len(initial)==420*224*4, 'Initial world boundary did not extend'
+    initial_center=b''.join(initial[(y*420+82)*4:(y*420+338)*4] for y in range(224))
+    assert initial_center==reference, 'Authentic boundary extension changed native center'
+    (out/'initial-wide.bgrx').write_bytes(initial)
+    print('Initial1-1: genuine world east, authenticated decorative ground continuation west; independent native center exact',flush=True)
 (out/'wide.bgrx').write_bytes(wide)
 (out/'adaptive-width.txt').write_bytes(private('adaptive-width.txt'))
 (out/'verified.json').write_text(json.dumps(dict(frame=8020,width=width,height=224,
