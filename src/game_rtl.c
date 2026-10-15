@@ -37,6 +37,8 @@
 #include "beam_frame_driver.h"
 #include "display_geometry.h"
 #include "snes/ppu.h"
+#include "snes/snes.h"
+#include "snes/superfx.h"
 #include "snes/ws_shadow.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,7 +49,51 @@
  * its Y origin matches the PPU's 10-bit vertical scroll modulo 1024. */
 extern uint8_t g_ram[0x20000];
 extern Ppu *g_ppu;
+extern Snes *g_snes;
 static int s_frame_width = 256;
+static bool s_gsu_audit_hook_installed;
+
+/* Capture the exact Yoshi BG1 expander input after its Super FX pass. This
+ * runs at STOP without redirecting or changing the guest GSU state. Records
+ * are [frame, pc, ram_size, layer1_x, layer1_y] followed by GSU RAM. */
+static void YoshiGsuTaskAuditHook(SuperFx *fx, uint32_t pc24, void *context)
+{
+    (void)context;
+    const char *path = getenv("SNESRECOMP_WS_GSU_TASK_FILE");
+    const char *range = getenv("SNESRECOMP_WS_GSU_TASK_RANGE");
+    if (!path || !path[0] || !range) return;
+    char *end = NULL;
+    long first = strtol(range, &end, 10);
+    if (end == range || *end != ',') return;
+    const char *cursor = end + 1;
+    long last = strtol(cursor, &end, 10);
+    if (end == cursor || *end || first < 0 || last < first) return;
+
+    extern int snes_frame_counter;
+    if (snes_frame_counter < first || snes_frame_counter > last ||
+        !fx || !fx->ram || !fx->ram_size)
+        return;
+    const uint32_t record[5] = {
+        (uint32_t)snes_frame_counter, pc24, fx->ram_size,
+        g_ram[0x39] | ((uint32_t)g_ram[0x3a] << 8),
+        g_ram[0x3b] | ((uint32_t)g_ram[0x3c] << 8)};
+    FILE *file = fopen(path, "ab");
+    if (!file) return;
+    fwrite(record, sizeof(record), 1, file);
+    fwrite(fx->ram, 1, fx->ram_size, file);
+    fclose(file);
+}
+
+static void InstallYoshiGsuAuditHook(void)
+{
+    if (s_gsu_audit_hook_installed ||
+        !getenv("SNESRECOMP_WS_GSU_TASK_FILE") || !g_snes ||
+        !g_snes->cart || !g_snes->cart->superfx)
+        return;
+    if (superfx_set_pc_hook(g_snes->cart->superfx, 0x09fa26,
+                            YoshiGsuTaskAuditHook, NULL))
+        s_gsu_audit_hook_installed = true;
+}
 
 /* Derive the native widened PPU field from the live landscape drawable only
  * while the USA v1.1 game-mode byte identifies tutorial/gameplay (0E/0F).
@@ -105,6 +151,7 @@ void GamePrepareFrame(int drawable_w, int drawable_h,
 void GameBeginFrame(unsigned number)
 {
     (void)number;
+    InstallYoshiGsuAuditHook();
     if (!g_ppu || !(g_ppu->extraLeftCur || g_ppu->extraRightCur)) return;
 
     for (int layer = 0; layer < 4; ++layer) {
