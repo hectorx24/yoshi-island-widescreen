@@ -55,7 +55,8 @@ static bool s_gsu_audit_hook_installed;
 
 /* Capture the exact Yoshi BG1 expander input after its Super FX pass. This
  * runs at STOP without redirecting or changing the guest GSU state. Records
- * are [frame, pc, ram_size, layer1_x, layer1_y] followed by GSU RAM. */
+ * are [frame, pc, gsu_size, layer1_x, layer1_y, level_size, R0..R15], then
+ * GSU RAM and the CPU LevelDataBuffer snapshot. */
 static void YoshiGsuTaskAuditHook(SuperFx *fx, uint32_t pc24, void *context)
 {
     (void)context;
@@ -73,14 +74,17 @@ static void YoshiGsuTaskAuditHook(SuperFx *fx, uint32_t pc24, void *context)
     if (snes_frame_counter < first || snes_frame_counter > last ||
         !fx || !fx->ram || !fx->ram_size)
         return;
-    const uint32_t record[5] = {
+    uint32_t record[22] = {
         (uint32_t)snes_frame_counter, pc24, fx->ram_size,
         g_ram[0x39] | ((uint32_t)g_ram[0x3a] << 8),
-        g_ram[0x3b] | ((uint32_t)g_ram[0x3c] << 8)};
+        g_ram[0x3b] | ((uint32_t)g_ram[0x3c] << 8), 0x8000};
+    for (unsigned i = 0; i < 16; ++i)
+        record[6 + i] = fx->r[i].data;
     FILE *file = fopen(path, "ab");
     if (!file) return;
     fwrite(record, sizeof(record), 1, file);
     fwrite(fx->ram, 1, fx->ram_size, file);
+    fwrite(g_ram + 0x18000, 1, 0x8000, file);
     fclose(file);
 }
 
