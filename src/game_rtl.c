@@ -35,6 +35,57 @@
 #include "game_rtl.h"
 
 #include "beam_frame_driver.h"
+#include "display_geometry.h"
+#include "snes/ppu.h"
+#include <stdio.h>
+#include <stdlib.h>
+
+/* Derive the native widened PPU field from the live landscape drawable. Keep
+ * 224 scanlines and guest timing unchanged. A fixed PPU override keeps
+ * reference captures reproducible. */
+void GamePrepareFrame(int drawable_w, int drawable_h,
+                      int *frame_w, int *frame_h)
+{
+    const int fixed_extra = PpuWsExtraOverride();
+    if (fixed_extra >= 0) {
+        *frame_w = 256 + 2 * fixed_extra;
+        *frame_h = 224;
+    } else {
+        YoshiDisplayGeometry geometry;
+        if (yoshi_display_geometry(drawable_w, drawable_h,
+                                   (YoshiInsets){0, 0, 0, 0}, 7.0 / 6.0,
+                                   &geometry)) {
+            int width = geometry.logical_width;
+            if (width < 256) width = 256;
+            if (width > kPpuBufWidth) width = kPpuBufWidth;
+            /* The native PPU allocates symmetric per-side margins. */
+            width = 256 + ((width - 256 + 1) & ~1);
+            if (width > kPpuBufWidth) width = kPpuBufWidth & ~1;
+            *frame_w = width;
+            *frame_h = 224;
+        }
+    }
+
+    /* Opt-in diagnostic used by the Android smoke test to assert that the
+     * live drawable, rather than a pinned test override, selected the field. */
+    if (getenv("SNESRECOMP_WS_DIAG")) {
+        static int last_width;
+        if (last_width != *frame_w) {
+            fprintf(stderr, "Yoshi adaptive field: drawable=%dx%d frame=%dx%d\n",
+                    drawable_w, drawable_h, *frame_w, *frame_h);
+            const char *path = getenv("SNESRECOMP_WS_DIAG_FILE");
+            if (path && path[0]) {
+                FILE *file = fopen(path, "a");
+                if (file) {
+                    fprintf(file, "drawable=%dx%d frame=%dx%d\n",
+                            drawable_w, drawable_h, *frame_w, *frame_h);
+                    fclose(file);
+                }
+            }
+            last_width = *frame_w;
+        }
+    }
+}
 
 void GameRunOneFrame(void)
 {

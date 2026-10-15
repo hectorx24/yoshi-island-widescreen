@@ -7,3 +7,5 @@ upstream/
 generated/
 build/
 __pycache__/
+*.apk
+*.keystore

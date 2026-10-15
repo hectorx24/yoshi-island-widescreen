@@ -53,6 +53,9 @@ static const SnesDesktopHostGame kGameHost = {
     .build_version       = SNES_GAME_VERSION,
     .game_info           = &kGameInfo,
     .num_players         = 1,
+    .widescreen_supported = 1,
+    .native_widescreen    = 1,
+    .prepare_frame        = &GamePrepareFrame,
     /* Battery-backed SRAM shows the launcher's SAVES panel. Leave NULL for a
      * title without one. The path is exe-relative. */
     .sram_path           = "saves/save.srm",
