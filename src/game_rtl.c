@@ -406,6 +406,8 @@ void GamePrepareFrame(int drawable_w, int drawable_h,
 void GameBeginFrame(unsigned number)
 {
     (void)number;
+    extern void YoshiInstallAndroidLifecycle(void);
+    YoshiInstallAndroidLifecycle();
     InstallYoshiGsuAuditHook();
     if (!g_ppu || !(g_ppu->extraLeftCur || g_ppu->extraRightCur)) return;
 

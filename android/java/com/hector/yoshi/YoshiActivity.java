@@ -5,12 +5,25 @@ import android.view.WindowManager;
 import android.view.View;
 import android.view.WindowInsets;
 import android.widget.TextView;
+import android.widget.RelativeLayout;
 import org.libsdl.app.SDLActivity;
 import java.io.*;
 
 public final class YoshiActivity extends SDLActivity {
+    private YoshiControls controls;
     @Override protected String[] getLibraries() { return new String[]{"SDL3", "YoshiIsland"}; }
     @Override protected String[] getArguments() {
+        if (getIntent().getBooleanExtra("save_diag", false))
+            nativeSetenv("SNESRECOMP_SAVE_DIAG",
+                new File(getFilesDir(), "save-diagnostic.txt").getPath());
+        if (getIntent().getBooleanExtra("input_diag", false))
+            nativeSetenv("SNESRECOMP_INPUT_DIAG",
+                new File(getFilesDir(), "input-diagnostic.txt").getPath());
+        if (getIntent().getBooleanExtra("controller_test", false)) {
+            nativeSetenv("SNESRECOMP_OVERLAY_SELFTEST_PAD", "60");
+            nativeSetenv("SNESRECOMP_TEST_LOG",
+                new File(getFilesDir(), "controller-test.txt").getPath());
+        }
         if (getIntent().getBooleanExtra("regression", false)) {
             File captures = new File(getFilesDir(), "captures");
             captures.mkdirs();
@@ -73,6 +86,11 @@ public final class YoshiActivity extends SDLActivity {
             return;
         }
         super.onCreate(state);
+        if (!getIntent().getBooleanExtra("regression", false)) {
+            controls = new YoshiControls(this);
+            mLayout.addView(controls, new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
+        }
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         immersive();
     }
@@ -103,5 +121,9 @@ public final class YoshiActivity extends SDLActivity {
     @Override public void onWindowFocusChanged(boolean focused) {
         super.onWindowFocusChanged(focused);
         if (focused) immersive();
+    }
+    @Override protected void onPause() {
+        if (controls != null) controls.releaseAll();
+        super.onPause();
     }
 }
