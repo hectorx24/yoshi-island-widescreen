@@ -89,16 +89,22 @@ static bool KnownBackground(void) {
      * eligibility remains individually composed/tested rooms until
      * their foregrounds, effects and sprites are individually qualified. */
     if (header != 26 && header != 29) {
-        /* Individually qualified1-4 entrance hall, not all castles/bosses.
-         * The room's original GSU screen layout stays stable as blocks change.
-         * A different room/encounter must qualify its own map and effects. */
-        if (header != 20 || g_ram[0x218] || g_ram[0x219] ||
-            g_ram[0x21a] != 3 || g_ram[0x21b] || g_ram[0x146] != 7 ||
-            g_ram[0x147] || !g_snes->cart->superfx) return false;
-        uint64_t room = UINT64_C(14695981039346656037);
-        for (unsigned i = 0; i < 128; ++i)
-            room = (room ^ g_snes->cart->superfx->ram[0x0caa + i]) * UINT64_C(1099511628211);
-        if (room != UINT64_C(0x666c9488c384aca4)) return false;
+        if (header != 14) {
+            /* Individually qualified1-4 entrance hall, not all castles/bosses.
+             * The room's original GSU screen layout stays stable as blocks change.
+             * A different room/encounter must qualify its own map and effects. */
+            if (header != 20 || g_ram[0x218] || g_ram[0x219] ||
+                g_ram[0x21a] != 3 || g_ram[0x21b] || g_ram[0x146] != 7 ||
+                g_ram[0x147] || !g_snes->cart->superfx) return false;
+            uint64_t room = UINT64_C(14695981039346656037);
+            for (unsigned i = 0; i < 128; ++i)
+                room = (room ^ g_snes->cart->superfx->ram[0x0caa + i]) * UINT64_C(1099511628211);
+            if (room != UINT64_C(0x666c9488c384aca4)) return false;
+        } else {
+            /* Individually qualified Level 1-2 (The Cave Of Chomp Rock). */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 1 ||
+                g_ram[0x21b] || g_ram[0x146] != 0 || g_ram[0x147]) return false;
+        }
     }
     static unsigned cached_header = 32;
     static uint8_t authored[4096];
@@ -150,6 +156,24 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
         UINT64_C(0x497113f1e5ed2ec2), UINT64_C(0x18fb135bc08fde80),
         UINT64_C(0x809cd72d4eedbad1), UINT64_C(0x601436a2995304b4),
         UINT64_C(0xe45b4a4d8172cda3), UINT64_C(0x394d1bfb82ddbdef)};
+    static const uint64_t s_bg3_cloud_rows[32] = {
+        UINT64_C(0xc80e2646f19da6e7), UINT64_C(0xb08173430a3b2dcf),
+        UINT64_C(0x0375a45c870a0ebc), UINT64_C(0x2d4bd9862e8aeb47),
+        UINT64_C(0x4eaf505d1908e42f), UINT64_C(0x435859682b4a7767),
+        UINT64_C(0xbcfae5a29400b6c5), UINT64_C(0x8a0268d40e4cf561),
+        UINT64_C(0x811871fd275bfc46), UINT64_C(0xe106489b2743b464),
+        UINT64_C(0xf3f50ccd8deb9eb9), UINT64_C(0x11da54f52a0b3b95),
+        UINT64_C(0xabd5c5f24e9532fb), UINT64_C(0x7a41574f1ef7df03),
+        UINT64_C(0x1d1e4ea6934a69e3), UINT64_C(0x93a06aa4110d16a5),
+        UINT64_C(0x93a06aa4110d16a5), UINT64_C(0x398b564d9ed216e5),
+        UINT64_C(0xb63425dd9712c4f0), UINT64_C(0xa2270cd857ac9185),
+        UINT64_C(0xd299323e0a519c8c), UINT64_C(0x463d7ed62bbe3545),
+        UINT64_C(0x0e6aefba03abc784), UINT64_C(0x141d38ac0309e84c),
+        UINT64_C(0xb2d96f31baebd5dc), UINT64_C(0xa3f472fcac353567),
+        UINT64_C(0xc45720941807d113), UINT64_C(0x10bf6f81d5eaf59f),
+        UINT64_C(0xd0408ee70fcb4de9), UINT64_C(0xfea017de198b1011),
+        UINT64_C(0x7cc7373e48acf535), UINT64_C(0x81fc0a1a1c54866d),
+    };
     const unsigned row = (wrapped_y >> 4) & 31;
     if (!s_bg2_plane)
         s_bg2_plane = KnownBackground() ? 1 : 2;
@@ -161,11 +185,15 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
             hash = (hash ^ (value & 255)) * UINT64_C(1099511628211);
             hash = (hash ^ (value >> 8)) * UINT64_C(1099511628211);
         }
-        const uint64_t expected = row < 24 ? UINT64_C(0x8fd4ca6a34b4e865) :
-                                             lower_rows[row - 24];
+        const unsigned bg3_ts = g_ram[0x138] | ((unsigned)g_ram[0x139] << 8);
+        uint64_t expected = 0;
+        if (bg3_ts == 9)
+            expected = row < 24 ? UINT64_C(0x8fd4ca6a34b4e865) : lower_rows[row - 24];
+        else if (bg3_ts == 10)
+            expected = s_bg3_cloud_rows[row];
         s_bg3_rows[row] = s_bg2_plane == 1 && PPU_mode(g_ppu) == 1 &&
             PPU_bigTiles(g_ppu, 2) && g_ppu->bgXsc[2] == 0x34 &&
-            PPU_bgTileAdr(g_ppu, 2) == 0x2000 && hash == expected ? 1 : 2;
+            PPU_bgTileAdr(g_ppu, 2) == 0x2000 && expected && hash == expected ? 1 : 2;
     }
     /* Original 512px foreground plane. Message boxes reuse this map
      * (CODE_01DF45); their modified rows must never wrap into margins. */
@@ -607,7 +635,8 @@ void GameDrawPpuFrame(void)
     memset(s_bg3_rows, 0, sizeof(s_bg3_rows));
     PpuSetWidescreenBg3Widen(g_ppu,
         (KnownPlane(1, UINT64_C(0x5f9149de60fa58c4)) ||
-         KnownPlane(1, UINT64_C(0x096eb6f63784aef3))) ? 1 : 0);
+         KnownPlane(1, UINT64_C(0x096eb6f63784aef3)) ||
+         KnownPlane(1, UINT64_C(0xbf3d1aeecd343863))) ? 1 : 0);
     if (g_ppu->extraLeftCur || g_ppu->extraRightCur)
         snes_beam_frame_driver_draw_ppu_frame_observed(BlackUnverifiedMargins, NULL);
     else
