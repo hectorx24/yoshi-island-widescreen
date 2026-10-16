@@ -128,6 +128,10 @@ static bool KnownBackground(void) {
             /* Individually qualified Level 2-2 (The Baseball Boys). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 13 ||
                 g_ram[0x21b] || g_ram[0x146] || g_ram[0x147]) return false;
+        } else if (header == 7) {
+            /* Individually qualified Level 2-5 (Watch Out For Lakitu). */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 16 ||
+                g_ram[0x21b] || g_ram[0x146] != 11 || g_ram[0x147]) return false;
         } else {
             return false;
         }
