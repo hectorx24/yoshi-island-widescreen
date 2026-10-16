@@ -147,7 +147,7 @@ wait 30
 press right 120
 press right+b 30
 wait 10
-poke 21a 1500
+poke 21a 1900
 wait 400
 dump level3_2_loaded
 wait 60

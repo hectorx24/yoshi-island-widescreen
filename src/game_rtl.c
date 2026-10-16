@@ -111,11 +111,12 @@ static bool KnownBackground(void) {
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 2 ||
                 g_ram[0x21b] || g_ram[0x146] != 5 || g_ram[0x147]) return false;
         } else if (header == 8) {
-            /* Individually qualified Level 1-7 (Touch Fuzzy, Get Dizzy) and Level 2-3 (What's Gusty Taste Like?). */
+            /* Individually qualified Level 1-7 (Touch Fuzzy, Get Dizzy), Level 2-3 (What's Gusty Taste Like?), and Level 3-2 (Jungle Rhythm...). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147]) return false;
             bool is_1_7 = (g_ram[0x21a] == 6 && g_ram[0x146] == 3);
             bool is_2_3 = (g_ram[0x21a] == 14 && g_ram[0x146] == 11);
-            if (!is_1_7 && !is_2_3) return false;
+            bool is_3_2 = (g_ram[0x21a] == 25 && g_ram[0x146] == 11);
+            if (!is_1_7 && !is_2_3 && !is_3_2) return false;
         } else if (header == 6) {
             /* Individually qualified Level 1-8 (Salvo The Slime's Castle). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 7 ||
@@ -256,6 +257,24 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
         UINT64_C(0xcfe8ec77736ec165), UINT64_C(0xcfe8ec77736ec165),
         UINT64_C(0xcfe8ec77736ec165), UINT64_C(0xcfe8ec77736ec165),
     };
+    static const uint64_t s_bg3_jungle_rhythm_rows[32] = {
+        UINT64_C(0xa13acd8bd3011da5), UINT64_C(0xa13acd8bd3011da5),
+        UINT64_C(0xa13acd8bd3011da5), UINT64_C(0xa13acd8bd3011da5),
+        UINT64_C(0xa13acd8bd3011da5), UINT64_C(0xa13acd8bd3011da5),
+        UINT64_C(0xa13acd8bd3011da5), UINT64_C(0xa13acd8bd3011da5),
+        UINT64_C(0xa13acd8bd3011da5), UINT64_C(0xa13acd8bd3011da5),
+        UINT64_C(0xa13acd8bd3011da5), UINT64_C(0xa13acd8bd3011da5),
+        UINT64_C(0xa13acd8bd3011da5), UINT64_C(0xa13acd8bd3011da5),
+        UINT64_C(0x484e5c809521957f), UINT64_C(0x1e487e07ea096852),
+        UINT64_C(0xc116c15ed9fe6f5d), UINT64_C(0xdfef98587b814f74),
+        UINT64_C(0x8e230f9d09dc7934), UINT64_C(0x343a60cf7ebd8265),
+        UINT64_C(0x343a60cf7ebd8265), UINT64_C(0xcc40ac3fe5ac7dbd),
+        UINT64_C(0xedba7a04092b5de1), UINT64_C(0x941637e2d7bf7eb8),
+        UINT64_C(0x8694bd885167a765), UINT64_C(0xf531e87f5074e836),
+        UINT64_C(0xa16a207f7c3745ad), UINT64_C(0x361d28cc92e61f34),
+        UINT64_C(0x343a60cf7ebd8265), UINT64_C(0x343a60cf7ebd8265),
+        UINT64_C(0x343a60cf7ebd8265), UINT64_C(0x343a60cf7ebd8265),
+    };
     const unsigned row = (wrapped_y >> 4) & 31;
     if (!s_bg2_plane)
         s_bg2_plane = KnownBackground() ? 1 : 2;
@@ -277,6 +296,8 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
             expected = s_bg3_sunset_rows[row];
         else if (bg3_ts == 1)
             expected = s_bg3_jungle_rows[row];
+        else if (bg3_ts == 27)
+            expected = s_bg3_jungle_rhythm_rows[row];
         s_bg3_rows[row] = s_bg2_plane == 1 && PPU_mode(g_ppu) == 1 &&
             PPU_bigTiles(g_ppu, 2) && g_ppu->bgXsc[2] == 0x34 &&
             PPU_bgTileAdr(g_ppu, 2) == 0x2000 && expected && hash == expected ? 1 : 2;
@@ -285,7 +306,7 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
      * (CODE_01DF45); their modified rows must never wrap into margins. */
     WsShadowSetWorld(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
     WsShadowSetScroll(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
-    const uint16_t fallback = bg3_ts == 15 ? 0x01db : (bg3_ts == 1 ? 0x052b : 0x0185);
+    const uint16_t fallback = bg3_ts == 15 ? 0x01db : (bg3_ts == 1 ? 0x052b : (bg3_ts == 27 ? 0x0143 : 0x0185));
     return s_bg3_rows[row] == 1 ? real_tile : fallback;
 }
 
@@ -725,7 +746,8 @@ void GameDrawPpuFrame(void)
         (KnownPlane(1, UINT64_C(0x5f9149de60fa58c4)) ||
          KnownPlane(1, UINT64_C(0x096eb6f63784aef3)) ||
          KnownPlane(1, UINT64_C(0xbf3d1aeecd343863)) ||
-         KnownPlane(1, UINT64_C(0x092f46b0b1817336))) ? 1 : 0);
+         KnownPlane(1, UINT64_C(0x092f46b0b1817336)) ||
+         KnownPlane(1, UINT64_C(0x651dd75517727c34))) ? 1 : 0);
     if (g_ppu->extraLeftCur || g_ppu->extraRightCur)
         snes_beam_frame_driver_draw_ppu_frame_observed(BlackUnverifiedMargins, NULL);
     else
