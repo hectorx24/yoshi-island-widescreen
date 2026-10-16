@@ -119,9 +119,11 @@ static bool KnownBackground(void) {
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 62 ||
                 g_ram[0x21b] || g_ram[0x146] != 3 || g_ram[0x147]) return false;
         } else if (header == 19) {
-            /* Individually qualified Level 1-3 Crystal Cavern. */
-            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 2 ||
-                g_ram[0x21b] || g_ram[0x146] != 5 || g_ram[0x147]) return false;
+            /* Individually qualified Level 1-3 Crystal Cavern and Level 6-5 (Feeding Time - The Raven). */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147]) return false;
+            bool is_1_3 = (g_ram[0x21a] == 2 && g_ram[0x146] == 5);
+            bool is_6_5 = (g_ram[0x21a] == 64 && g_ram[0x146] == 8);
+            if (!is_1_3 && !is_6_5) return false;
         } else if (header == 8) {
             /* Individually qualified Level 1-7, Level 2-3, Level 3-2, Level 3-7, and Level 4-2 (The Cave Of The Chomp Rock). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147]) return false;
@@ -1032,6 +1034,7 @@ void GameDrawPpuFrame(void)
          KnownPlane(1, UINT64_C(0x285d5a6a988267e1)) ||
          KnownPlane(1, UINT64_C(0x5c664a35779ca45d)) ||
          KnownPlane(1, UINT64_C(0x49d67df62faf6d05)) ||
+         KnownPlane(1, UINT64_C(0x8df6a33098b9c952)) ||
          KnownPlane(1, UINT64_C(0x6fa20925f750ef82))) ? 1 : 0);
     if (g_ppu->extraLeftCur || g_ppu->extraRightCur)
         snes_beam_frame_driver_draw_ppu_frame_observed(BlackUnverifiedMargins, NULL);
