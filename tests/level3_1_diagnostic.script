@@ -1,4 +1,4 @@
-# Diagnostic only: WRAM21A selects 3-1 (Welcome To Monkey World!) after map transition.
+# Diagnostic only: WRAM21A selects 3-1 (Welcome To Monkey World!, slot 24 = 0x18) after map transition.
 # Diagnostic investigation: captures native 256x224 baseline before any widescreen modifications.
 turbo on
 wait 1200
@@ -147,7 +147,7 @@ wait 30
 press right 120
 press right+b 30
 wait 10
-poke 21a 1400
+poke 21a 1800
 wait 400
 dump level3_1_loaded
 wait 60
