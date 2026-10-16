@@ -97,13 +97,15 @@ static bool KnownBackground(void) {
             bool is_1_4 = (g_ram[0x21a] == 3 && g_ram[0x146] == 7);
             bool is_2_4 = (g_ram[0x21a] == 15 && g_ram[0x146] == 0);
             bool is_5_4 = (g_ram[0x21a] == 51 && g_ram[0x146] == 11);
-            if (!is_1_4 && !is_2_4 && !is_5_4) return false;
+            bool is_6_4 = (g_ram[0x21a] == 63 && g_ram[0x146] == 3);
+            if (!is_1_4 && !is_2_4 && !is_5_4 && !is_6_4) return false;
             uint64_t room = UINT64_C(14695981039346656037);
             for (unsigned i = 0; i < 128; ++i)
                 room = (room ^ g_snes->cart->superfx->ram[0x0caa + i]) * UINT64_C(1099511628211);
             if (is_1_4 && room != UINT64_C(0x666c9488c384aca4)) return false;
             if (is_2_4 && room != UINT64_C(0x04cc798b969635ee)) return false;
             if (is_5_4 && room != UINT64_C(0xc8eb129a88883582)) return false;
+            if (is_6_4 && room != UINT64_C(0x3832f400364253ae)) return false;
         } else if (header == 0) {
             /* Individually qualified Level 6-2 (The Peek-A-Boo Ghost House). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 61 ||
