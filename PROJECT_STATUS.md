@@ -61,8 +61,8 @@
 
 <!-- checkpoint:begin -->
 ## Automatic checkpoint
-- Checked 2026-10-16T12:55:29+00:00; Three boot framebuffer regression checkpoints passed
-- Git base at checkpoint: ca98633; 3 changed/untracked paths (run git status).
+- Checked 2026-10-16T12:55:39+00:00; Qualify Level 1-2 BG2 hills and BG3 clouds in widescreen
+- Git base at checkpoint: 9fef01b; 1 changed/untracked paths (run git status).
 - Last supported quota observation (2026-10-15T20:53:30+00:00): five_hour: 0% remaining; weekly: 78% remaining.
 - LOW QUOTA: handoff saved; preserve WIP and precise next action before further expensive work.
 <!-- checkpoint:end -->
