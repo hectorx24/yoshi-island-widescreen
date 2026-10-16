@@ -111,12 +111,13 @@ static bool KnownBackground(void) {
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 2 ||
                 g_ram[0x21b] || g_ram[0x146] != 5 || g_ram[0x147]) return false;
         } else if (header == 8) {
-            /* Individually qualified Level 1-7 (Touch Fuzzy, Get Dizzy), Level 2-3 (What's Gusty Taste Like?), and Level 3-2 (Jungle Rhythm...). */
+            /* Individually qualified Level 1-7, Level 2-3, Level 3-2, and Level 3-7 (Monkeys' Favorite Lake). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147]) return false;
             bool is_1_7 = (g_ram[0x21a] == 6 && g_ram[0x146] == 3);
             bool is_2_3 = (g_ram[0x21a] == 14 && g_ram[0x146] == 11);
             bool is_3_2 = (g_ram[0x21a] == 25 && g_ram[0x146] == 11);
-            if (!is_1_7 && !is_2_3 && !is_3_2) return false;
+            bool is_3_7 = (g_ram[0x21a] == 30 && g_ram[0x146] == 11);
+            if (!is_1_7 && !is_2_3 && !is_3_2 && !is_3_7) return false;
         } else if (header == 6) {
             /* Individually qualified Level 1-8 (Salvo The Slime's Castle). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 7 ||
@@ -824,7 +825,8 @@ void GameDrawPpuFrame(void)
          KnownPlane(1, UINT64_C(0xa17e5ff8fbe84e98)) ||
          KnownPlane(1, UINT64_C(0x7343767b921cae1a)) ||
          KnownPlane(1, UINT64_C(0xa1cb0d5bbc24814f)) ||
-         KnownPlane(1, UINT64_C(0x81c7bbee105fd7f3))) ? 1 : 0);
+         KnownPlane(1, UINT64_C(0x81c7bbee105fd7f3)) ||
+         KnownPlane(1, UINT64_C(0x7ef7e2caa7953c75))) ? 1 : 0);
     if (g_ppu->extraLeftCur || g_ppu->extraRightCur)
         snes_beam_frame_driver_draw_ppu_frame_observed(BlackUnverifiedMargins, NULL);
     else
