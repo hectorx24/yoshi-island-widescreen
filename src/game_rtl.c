@@ -116,6 +116,10 @@ static bool KnownBackground(void) {
             /* Individually qualified Level 1-8 (Salvo The Slime's Castle). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 7 ||
                 g_ram[0x21b] || g_ram[0x146] != 5 || g_ram[0x147]) return false;
+        } else if (header == 4) {
+            /* Individually qualified Level 2-1 (Visit Koopa And Para-Koopa). */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 12 ||
+                g_ram[0x21b] || g_ram[0x146] != 11 || g_ram[0x147]) return false;
         } else {
             return false;
         }
