@@ -58,8 +58,8 @@
 
 <!-- checkpoint:begin -->
 ## Automatic checkpoint
-- Checked 2026-10-16T12:09:36+00:00; 1-4 boss encounter (Room 0x3D) diagnosed and captured across intro and battle sequence
-- Git base at checkpoint: 0fef6f6; 4 changed/untracked paths (run git status).
+- Checked 2026-10-16T12:10:14+00:00; ROM/geometry/quota, achievement memory and available native rc_client fixture tests passed
+- Git base at checkpoint: faaabab; 1 changed/untracked paths (run git status).
 - Last supported quota observation (2026-10-15T20:53:30+00:00): five_hour: 0% remaining; weekly: 78% remaining.
 - LOW QUOTA: handoff saved; preserve WIP and precise next action before further expensive work.
 <!-- checkpoint:end -->
