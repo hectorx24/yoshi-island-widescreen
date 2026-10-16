@@ -88,7 +88,7 @@ static bool KnownBackground(void) {
     /* Source verification generalizes to all32 original descriptors; scene
      * eligibility remains individually composed/tested rooms until
      * their foregrounds, effects and sprites are individually qualified. */
-    if (header != 26 && header != 29) {
+    if (header != 26) {
         if (header == 20) {
             /* Individually qualified 1-4 entrance hall and Level 2-4 (Bigger Boo's Fort).
              * The room's original GSU screen layout stays stable as blocks change.
@@ -181,6 +181,12 @@ static bool KnownBackground(void) {
             /* Individually qualified Level 4-5 (Chomp Rock Zone). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 40 ||
                 g_ram[0x21b] || g_ram[0x146] || g_ram[0x147]) return false;
+        } else if (header == 29) {
+            /* Individually qualified Level 1-1 (Make Eggs, Throw Eggs) and Level 5-2 (Ride The Ski Lifts). */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147]) return false;
+            bool is_1_1 = (g_ram[0x21a] == 0 && g_ram[0x146] == 0);
+            bool is_5_2 = (g_ram[0x21a] == 49 && g_ram[0x146] == 0);
+            if (!is_1_1 && !is_5_2) return false;
         } else {
             return false;
         }
@@ -435,6 +441,8 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
             expected = s_bg3_lakitu_cave_rows[row];
         else if (bg3_ts == 7)
             expected = (row & 1) ? UINT64_C(0x53035b747d6b6fe5) : UINT64_C(0x5e6a8f4d49fda5a5);
+        else if (bg3_ts == 4)
+            expected = s_bg3_go_mario_rows[row];
         s_bg3_rows[row] = s_bg2_plane == 1 && PPU_mode(g_ppu) == 1 &&
             PPU_bigTiles(g_ppu, 2) && g_ppu->bgXsc[2] == 0x34 &&
             PPU_bgTileAdr(g_ppu, 2) == 0x2000 && expected && hash == expected ? 1 : 2;
@@ -443,7 +451,7 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
      * (CODE_01DF45); their modified rows must never wrap into margins. */
     WsShadowSetWorld(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
     WsShadowSetScroll(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
-    const uint16_t fallback = bg3_ts == 15 ? 0x01db : (bg3_ts == 1 ? 0x052b : (bg3_ts == 27 ? 0x0143 : (bg3_ts == 5 ? (g_ram[0x21a] == 27 ? 0x01ce : (g_ram[0x21a] == 29 ? 0x0126 : (g_ram[0x21a] == 31 ? 0x0564 : 0x2100))) : (bg3_ts == 21 ? 0x015e : (bg3_ts == 20 ? (g_ram[0x21a] == 37 ? 0x0143 : (g_ram[0x21a] == 41 ? (row < 27 ? 0x01ce : (row == 27 ? 0x21e0 : 0x21cc)) : 0x8188)) : (bg3_ts == 22 ? 0x01ce : (bg3_ts == 19 ? 0x0126 : (bg3_ts == 7 ? ((row & 1) ? 0x01e4 : 0x01e0) : 0x0185))))))));
+    const uint16_t fallback = bg3_ts == 15 ? 0x01db : (bg3_ts == 1 ? 0x052b : (bg3_ts == 27 ? 0x0143 : (bg3_ts == 5 ? (g_ram[0x21a] == 27 ? 0x01ce : (g_ram[0x21a] == 29 ? 0x0126 : (g_ram[0x21a] == 31 ? 0x0564 : 0x2100))) : (bg3_ts == 21 ? 0x015e : (bg3_ts == 20 ? (g_ram[0x21a] == 37 ? 0x0143 : (g_ram[0x21a] == 41 ? (row < 27 ? 0x01ce : (row == 27 ? 0x21e0 : 0x21cc)) : 0x8188)) : (bg3_ts == 22 ? 0x01ce : (bg3_ts == 19 ? 0x0126 : (bg3_ts == 4 ? 0x01db : (bg3_ts == 7 ? ((row & 1) ? 0x01e4 : 0x01e0) : 0x0185)))))))));
     return s_bg3_rows[row] == 1 ? real_tile : fallback;
 }
 
