@@ -89,21 +89,27 @@ static bool KnownBackground(void) {
      * eligibility remains individually composed/tested rooms until
      * their foregrounds, effects and sprites are individually qualified. */
     if (header != 26 && header != 29) {
-        if (header != 14) {
-            /* Individually qualified1-4 entrance hall, not all castles/bosses.
+        if (header == 20) {
+            /* Individually qualified 1-4 entrance hall, not all castles/bosses.
              * The room's original GSU screen layout stays stable as blocks change.
              * A different room/encounter must qualify its own map and effects. */
-            if (header != 20 || g_ram[0x218] || g_ram[0x219] ||
+            if (g_ram[0x218] || g_ram[0x219] ||
                 g_ram[0x21a] != 3 || g_ram[0x21b] || g_ram[0x146] != 7 ||
                 g_ram[0x147] || !g_snes->cart->superfx) return false;
             uint64_t room = UINT64_C(14695981039346656037);
             for (unsigned i = 0; i < 128; ++i)
                 room = (room ^ g_snes->cart->superfx->ram[0x0caa + i]) * UINT64_C(1099511628211);
             if (room != UINT64_C(0x666c9488c384aca4)) return false;
-        } else {
+        } else if (header == 14) {
             /* Individually qualified Level 1-2 (The Cave Of Chomp Rock). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 1 ||
                 g_ram[0x21b] || g_ram[0x146] != 0 || g_ram[0x147]) return false;
+        } else if (header == 19) {
+            /* Individually qualified Level 1-3 Crystal Cavern. */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 2 ||
+                g_ram[0x21b] || g_ram[0x146] != 5 || g_ram[0x147]) return false;
+        } else {
+            return false;
         }
     }
     static unsigned cached_header = 32;
