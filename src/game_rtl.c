@@ -138,6 +138,10 @@ static bool KnownBackground(void) {
             /* Individually qualified Level 2-6 (The Cave Of Mystery Maze). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 17 ||
                 g_ram[0x21b] || g_ram[0x146] || g_ram[0x147]) return false;
+        } else if (header == 25) {
+            /* Individually qualified Level 2-8 (The Potted Ghost's Castle). */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 19 ||
+                g_ram[0x21b] || g_ram[0x146] != 11 || g_ram[0x147]) return false;
         } else {
             return false;
         }
