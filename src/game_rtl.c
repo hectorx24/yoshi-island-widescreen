@@ -170,9 +170,12 @@ static bool KnownBackground(void) {
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x146] != 11 || g_ram[0x147]) return false;
             if (g_ram[0x21a] != 19 && g_ram[0x21a] != 43) return false;
         } else if (header == 1) {
-            /* Individually qualified Level 3-1 (Welcome To Monkey World!) and Level 6-1 (Scary Bellies, Feed & Eat). */
-            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x146] != 11 || g_ram[0x147]) return false;
-            if (g_ram[0x21a] != 24 && g_ram[0x21a] != 60) return false;
+            /* Individually qualified Level 3-1 (Welcome To Monkey World!), Level 6-1 (Scary Bellies, Feed & Eat) and Level 6-8 (King Bowser's Castle). */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147]) return false;
+            bool is_3_1 = (g_ram[0x21a] == 24 && g_ram[0x146] == 11);
+            bool is_6_1 = (g_ram[0x21a] == 60 && g_ram[0x146] == 11);
+            bool is_6_8 = (g_ram[0x21a] == 67 && g_ram[0x146] == 0);
+            if (!is_3_1 && !is_6_1 && !is_6_8) return false;
         } else if (header == 10) {
             /* Individually qualified Level 3-3 (Nep-Enut's Domain) and Level 4-6 (Lake Nostalgia). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147]) return false;
@@ -519,6 +522,24 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
         UINT64_C(0xc6bd2ca86a7e3467), UINT64_C(0xa9bc5438fc09b0ce),
         UINT64_C(0xa1fb1bc2c9d58036), UINT64_C(0x8d29264e60043e36),
     };
+    static const uint64_t s_bg3_bowser_castle_rows[32] = {
+        UINT64_C(0x104fdece49d7a2bd), UINT64_C(0x59c81b6c488220ea),
+        UINT64_C(0xa1a378a6f8aecfae), UINT64_C(0xffa756e99d71bd2e),
+        UINT64_C(0xe8d86f525ebf1f24), UINT64_C(0x54ec2b1e7b7e9722),
+        UINT64_C(0x7f553819555e8ace), UINT64_C(0x6d67ef7d78483fb8),
+        UINT64_C(0x98b601d1e7f2c292), UINT64_C(0x0fd6ce5c635c8c5e),
+        UINT64_C(0xccdeda8f8101ca90), UINT64_C(0x3b57c7274808bc56),
+        UINT64_C(0xf22527ad4562ddb6), UINT64_C(0x11c4d2b9d695736c),
+        UINT64_C(0x9507fbcf78df96b4), UINT64_C(0x90b217cfcf4a55b6),
+        UINT64_C(0x568134f97b08f23c), UINT64_C(0x8c3258a120368bd3),
+        UINT64_C(0xaf1831bea1af16b1), UINT64_C(0xe5a6c82790ae4dc6),
+        UINT64_C(0x5a2fda188cc026f4), UINT64_C(0xe94c29aca33d3c1a),
+        UINT64_C(0xdd51021eb0b83d95), UINT64_C(0xefe00c2115733902),
+        UINT64_C(0x27da02a1e5fe06c1), UINT64_C(0x214fa86e3fb00c00),
+        UINT64_C(0x8ba5efbd066d1065), UINT64_C(0x3087a325f46dcca5),
+        UINT64_C(0x3087a325f46dcca5), UINT64_C(0x3087a325f46dcca5),
+        UINT64_C(0x3087a325f46dcca5), UINT64_C(0x3087a325f46dcca5),
+    };
     const unsigned row = (wrapped_y >> 4) & 31;
     if (!s_bg2_plane)
         s_bg2_plane = KnownBackground() ? 1 : 2;
@@ -542,6 +563,8 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
             expected = s_bg3_jungle_rows[row];
         else if (bg3_ts == 27)
             expected = s_bg3_jungle_rhythm_rows[row];
+        else if (bg3_ts == 26)
+            expected = s_bg3_bowser_castle_rows[row];
         else if (bg3_ts == 5)
             expected = g_ram[0x21a] == 27 ? UINT64_C(0x0410753426052ee5) :
                       (g_ram[0x21a] == 29 ? s_bg3_lakitu_cave_rows[row] :
@@ -584,7 +607,7 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
      * (CODE_01DF45); their modified rows must never wrap into margins. */
     WsShadowSetWorld(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
     WsShadowSetScroll(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
-    const uint16_t fallback = bg3_ts == 17 ? (g_ram[0x21a] == 62 ? (row == 16 ? 0x2000 : (row == 17 ? 0x240c : 0x01ce)) : 0x0185) : (bg3_ts == 13 ? 0x0185 : (bg3_ts == 28 ? 0x01db : (bg3_ts == 15 ? 0x01db : (bg3_ts == 1 ? 0x052b : (bg3_ts == 27 ? 0x0143 : (bg3_ts == 5 ? (g_ram[0x21a] == 27 ? 0x01ce : (g_ram[0x21a] == 29 ? 0x0126 : (g_ram[0x21a] == 31 ? 0x0564 : 0x2100))) : (bg3_ts == 21 ? 0x015e : (bg3_ts == 20 ? (g_ram[0x21a] == 37 ? 0x0143 : (g_ram[0x21a] == 41 ? (row < 27 ? 0x01ce : (row == 27 ? 0x21e0 : 0x21cc)) : 0x8188)) : (bg3_ts == 22 ? (g_ram[0x21a] == 54 ? 0x0185 : 0x01ce) : (bg3_ts == 19 ? 0x0126 : (bg3_ts == 4 ? (g_ram[0x21a] == 50 ? 0x0185 : 0x01db) : (bg3_ts == 7 ? (g_ram[0x21a] == 52 ? 0x015e : ((row & 1) ? 0x01e4 : 0x01e0)) : 0x0185))))))))))));
+    const uint16_t fallback = bg3_ts == 26 ? (row >= 27 ? 0x0968 : 0x052b) : (bg3_ts == 17 ? (g_ram[0x21a] == 62 ? (row == 16 ? 0x2000 : (row == 17 ? 0x240c : 0x01ce)) : 0x0185) : (bg3_ts == 13 ? 0x0185 : (bg3_ts == 28 ? 0x01db : (bg3_ts == 15 ? 0x01db : (bg3_ts == 1 ? 0x052b : (bg3_ts == 27 ? 0x0143 : (bg3_ts == 5 ? (g_ram[0x21a] == 27 ? 0x01ce : (g_ram[0x21a] == 29 ? 0x0126 : (g_ram[0x21a] == 31 ? 0x0564 : 0x2100))) : (bg3_ts == 21 ? 0x015e : (bg3_ts == 20 ? (g_ram[0x21a] == 37 ? 0x0143 : (g_ram[0x21a] == 41 ? (row < 27 ? 0x01ce : (row == 27 ? 0x21e0 : 0x21cc)) : 0x8188)) : (bg3_ts == 22 ? (g_ram[0x21a] == 54 ? 0x0185 : 0x01ce) : (bg3_ts == 19 ? 0x0126 : (bg3_ts == 4 ? (g_ram[0x21a] == 50 ? 0x0185 : 0x01db) : (bg3_ts == 7 ? (g_ram[0x21a] == 52 ? 0x015e : ((row & 1) ? 0x01e4 : 0x01e0)) : 0x0185)))))))))))));
     return s_bg3_rows[row] == 1 ? real_tile : fallback;
 }
 
