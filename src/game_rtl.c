@@ -142,9 +142,11 @@ static bool KnownBackground(void) {
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 16 ||
                 g_ram[0x21b] || g_ram[0x146] != 11 || g_ram[0x147]) return false;
         } else if (header == 11) {
-            /* Individually qualified Level 2-6 (The Cave Of Mystery Maze). */
-            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 17 ||
-                g_ram[0x21b] || g_ram[0x146] || g_ram[0x147]) return false;
+            /* Individually qualified Level 2-6 (The Cave Of Mystery Maze) and Level 4-4 (Marching Milde's Fort). */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147]) return false;
+            bool is_2_6 = (g_ram[0x21a] == 17 && g_ram[0x146] == 0);
+            bool is_4_4 = (g_ram[0x21a] == 39 && g_ram[0x146] == 5);
+            if (!is_2_6 && !is_4_4) return false;
         } else if (header == 25) {
             /* Individually qualified Level 2-8 (The Potted Ghost's Castle). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 19 ||
