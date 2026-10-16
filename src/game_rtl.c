@@ -195,9 +195,11 @@ static bool KnownBackground(void) {
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 31 ||
                 g_ram[0x21b] || g_ram[0x146] != 5 || g_ram[0x147]) return false;
         } else if (header == 30) {
-            /* Individually qualified Level 4-5 (Chomp Rock Zone). */
-            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 40 ||
-                g_ram[0x21b] || g_ram[0x146] || g_ram[0x147]) return false;
+            /* Individually qualified Level 4-5 (Chomp Rock Zone) and Level 6-7 (Keep Moving!). */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147]) return false;
+            bool is_4_5 = (g_ram[0x21a] == 40 && g_ram[0x146] == 0);
+            bool is_6_7 = (g_ram[0x21a] == 66 && g_ram[0x146] == 5);
+            if (!is_4_5 && !is_6_7) return false;
         } else if (header == 29) {
             /* Individually qualified Level 1-1 (Make Eggs, Throw Eggs) and Level 5-2 (Ride The Ski Lifts). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147]) return false;
