@@ -157,9 +157,9 @@ static bool KnownBackground(void) {
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x146] != 11 || g_ram[0x147]) return false;
             if (g_ram[0x21a] != 19 && g_ram[0x21a] != 43) return false;
         } else if (header == 1) {
-            /* Individually qualified Level 3-1 (Welcome To Monkey World!). */
-            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 24 ||
-                g_ram[0x21b] || g_ram[0x146] != 11 || g_ram[0x147]) return false;
+            /* Individually qualified Level 3-1 (Welcome To Monkey World!) and Level 6-1 (Scary Bellies, Feed & Eat). */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x146] != 11 || g_ram[0x147]) return false;
+            if (g_ram[0x21a] != 24 && g_ram[0x21a] != 60) return false;
         } else if (header == 10) {
             /* Individually qualified Level 3-3 (Nep-Enut's Domain) and Level 4-6 (Lake Nostalgia). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147]) return false;
