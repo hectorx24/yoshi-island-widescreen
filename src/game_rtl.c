@@ -127,9 +127,11 @@ static bool KnownBackground(void) {
             bool is_2_7 = (g_ram[0x21a] == 18 && g_ram[0x146] == 7);
             if (!is_2_1 && !is_2_7) return false;
         } else if (header == 21) {
-            /* Individually qualified Level 2-2 (The Baseball Boys). */
-            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 13 ||
-                g_ram[0x21b] || g_ram[0x146] || g_ram[0x147]) return false;
+            /* Individually qualified Level 2-2 (The Baseball Boys) and Level 3-1 (Welcome To Monkey World!). */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147]) return false;
+            bool is_2_2 = (g_ram[0x21a] == 13 && g_ram[0x146] == 0);
+            bool is_3_1 = (g_ram[0x21a] == 20 && g_ram[0x146] == 11);
+            if (!is_2_2 && !is_3_1) return false;
         } else if (header == 7) {
             /* Individually qualified Level 2-5 (Watch Out For Lakitu). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 16 ||
