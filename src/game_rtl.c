@@ -127,14 +127,15 @@ static bool KnownBackground(void) {
             bool is_6_5 = (g_ram[0x21a] == 64 && g_ram[0x146] == 8);
             if (!is_1_3 && !is_6_5) return false;
         } else if (header == 8) {
-            /* Individually qualified Level 1-7, Level 2-3, Level 3-2, Level 3-7, and Level 4-2 (The Cave Of The Chomp Rock). */
+            /* Individually qualified Level 1-7, Level 2-3, Level 3-2, Level 3-7, Level 4-2, and Extra 3 (More Monkey Antics). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147]) return false;
             bool is_1_7 = (g_ram[0x21a] == 6 && g_ram[0x146] == 3);
             bool is_2_3 = (g_ram[0x21a] == 14 && g_ram[0x146] == 11);
             bool is_3_2 = (g_ram[0x21a] == 25 && g_ram[0x146] == 11);
             bool is_3_7 = (g_ram[0x21a] == 30 && g_ram[0x146] == 11);
             bool is_4_2 = (g_ram[0x21a] == 37 && g_ram[0x146] == 11);
-            if (!is_1_7 && !is_2_3 && !is_3_2 && !is_3_7 && !is_4_2) return false;
+            bool is_extra_3 = (g_ram[0x21a] == 32 && g_ram[0x146] == 0);
+            if (!is_1_7 && !is_2_3 && !is_3_2 && !is_3_7 && !is_4_2 && !is_extra_3) return false;
         } else if (header == 6) {
             /* Individually qualified Level 1-8 (Salvo The Slime's Castle). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 7 ||
@@ -588,7 +589,8 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
         else if (bg3_ts == 5)
             expected = g_ram[0x21a] == 27 ? UINT64_C(0x0410753426052ee5) :
                       (g_ram[0x21a] == 29 ? s_bg3_lakitu_cave_rows[row] :
-                      (g_ram[0x21a] == 31 ? s_bg3_naval_castle_rows[row] : s_bg3_nep_enut_rows[row]));
+                      (g_ram[0x21a] == 31 ? s_bg3_naval_castle_rows[row] :
+                      (g_ram[0x21a] == 32 ? s_bg3_jammin_rows[row] : s_bg3_nep_enut_rows[row])));
         else if (bg3_ts == 21)
             expected = s_bg3_jammin_rows[row];
         else if (bg3_ts == 20)
@@ -628,7 +630,7 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
      * (CODE_01DF45); their modified rows must never wrap into margins. */
     WsShadowSetWorld(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
     WsShadowSetScroll(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
-    const uint16_t fallback = bg3_ts == 26 ? (row >= 27 ? 0x0968 : 0x052b) : (bg3_ts == 17 ? (g_ram[0x21a] == 62 ? (row == 16 ? 0x2000 : (row == 17 ? 0x240c : 0x01ce)) : 0x0185) : ((bg3_ts == 13 || bg3_ts == 12) ? 0x0185 : (bg3_ts == 28 ? 0x01db : (bg3_ts == 15 ? 0x01db : (bg3_ts == 1 ? 0x052b : (bg3_ts == 27 ? 0x0143 : (bg3_ts == 5 ? (g_ram[0x21a] == 27 ? 0x01ce : (g_ram[0x21a] == 29 ? 0x0126 : (g_ram[0x21a] == 31 ? 0x0564 : 0x2100))) : (bg3_ts == 21 ? 0x015e : (bg3_ts == 20 ? (g_ram[0x21a] == 37 ? 0x0143 : (g_ram[0x21a] == 41 ? (row < 27 ? 0x01ce : (row == 27 ? 0x21e0 : 0x21cc)) : 0x8188)) : (bg3_ts == 22 ? (g_ram[0x21a] == 54 ? 0x0185 : 0x01ce) : (bg3_ts == 19 ? 0x0126 : (bg3_ts == 4 ? (g_ram[0x21a] == 50 ? 0x0185 : 0x01db) : (bg3_ts == 7 ? (g_ram[0x21a] == 52 ? 0x015e : (g_ram[0x21a] == 20 ? (row >= 29 ? 0x05c8 : 0x05ce) : ((row & 1) ? 0x01e4 : 0x01e0))) : 0x0185)))))))))))));
+    const uint16_t fallback = bg3_ts == 26 ? (row >= 27 ? 0x0968 : 0x052b) : (bg3_ts == 17 ? (g_ram[0x21a] == 62 ? (row == 16 ? 0x2000 : (row == 17 ? 0x240c : 0x01ce)) : 0x0185) : ((bg3_ts == 13 || bg3_ts == 12) ? 0x0185 : (bg3_ts == 28 ? 0x01db : (bg3_ts == 15 ? 0x01db : (bg3_ts == 1 ? 0x052b : (bg3_ts == 27 ? 0x0143 : (bg3_ts == 5 ? (g_ram[0x21a] == 27 ? 0x01ce : (g_ram[0x21a] == 29 ? 0x0126 : (g_ram[0x21a] == 31 ? 0x0564 : (g_ram[0x21a] == 32 ? 0x015e : 0x2100)))) : (bg3_ts == 21 ? 0x015e : (bg3_ts == 20 ? (g_ram[0x21a] == 37 ? 0x0143 : (g_ram[0x21a] == 41 ? (row < 27 ? 0x01ce : (row == 27 ? 0x21e0 : 0x21cc)) : 0x8188)) : (bg3_ts == 22 ? (g_ram[0x21a] == 54 ? 0x0185 : 0x01ce) : (bg3_ts == 19 ? 0x0126 : (bg3_ts == 4 ? (g_ram[0x21a] == 50 ? 0x0185 : 0x01db) : (bg3_ts == 7 ? (g_ram[0x21a] == 52 ? 0x015e : (g_ram[0x21a] == 20 ? (row >= 29 ? 0x05c8 : 0x05ce) : ((row & 1) ? 0x01e4 : 0x01e0))) : 0x0185)))))))))))));
     return s_bg3_rows[row] == 1 ? real_tile : fallback;
 }
 
