@@ -192,11 +192,12 @@ static bool KnownBackground(void) {
             bool is_5_2 = (g_ram[0x21a] == 49 && g_ram[0x146] == 0);
             if (!is_1_1 && !is_5_2) return false;
         } else if (header == 18) {
-            /* Individually qualified Level 5-5 (Goonie Rides!) and Level 5-6 (Night Flight - Balloon Trip). */
+            /* Individually qualified Level 5-5 (Goonie Rides!), Level 5-6 (Night Flight - Balloon Trip) and Level 5-8 (Raphael Raven's Castle). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147]) return false;
             bool is_5_5 = (g_ram[0x21a] == 52 && g_ram[0x146] == 11);
             bool is_5_6 = (g_ram[0x21a] == 53 && g_ram[0x146] == 7);
-            if (!is_5_5 && !is_5_6) return false;
+            bool is_5_8 = (g_ram[0x21a] == 55 && g_ram[0x146] == 0);
+            if (!is_5_5 && !is_5_6 && !is_5_8) return false;
         } else {
             return false;
         }
@@ -467,6 +468,24 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
         UINT64_C(0x94055b02f4a452a5), UINT64_C(0x9d6e5ed326d0f8b7),
         UINT64_C(0x977e5e99bffc1635), UINT64_C(0xcaaf1ce60524d5b5),
     };
+    static const uint64_t s_bg3_raphael_castle_rows[32] = {
+        UINT64_C(0x60d90e0d0d506718), UINT64_C(0x3e8ac362ef2b1237),
+        UINT64_C(0xf8ac2681a5d6d364), UINT64_C(0x842a888ee2054d25),
+        UINT64_C(0x543edcd65e6abd63), UINT64_C(0x94fe96fc401bf5ad),
+        UINT64_C(0xbe77233c83e08017), UINT64_C(0xa9f4c9c7845a8b74),
+        UINT64_C(0x9327983194b9559f), UINT64_C(0x90e56b25cddf7e80),
+        UINT64_C(0x6690e6e8a096444a), UINT64_C(0x779bc64d298bc526),
+        UINT64_C(0xb9aa9866375cbc34), UINT64_C(0xaf73f53bfd3c8236),
+        UINT64_C(0x6cb7765279fed248), UINT64_C(0xb0b3650117bdc3df),
+        UINT64_C(0xdf4639a0f3784a1a), UINT64_C(0x49041924ecb302f1),
+        UINT64_C(0xc36f4ef6d8a7b1ce), UINT64_C(0x6b87a0ee5c3e7416),
+        UINT64_C(0x68d828ec164d2531), UINT64_C(0xdbee87b00d936ee2),
+        UINT64_C(0x7d0b54db2b2f5c60), UINT64_C(0x987569de2f49f627),
+        UINT64_C(0xd54f9e5346488aa3), UINT64_C(0xd7d29013aea6afaa),
+        UINT64_C(0x29c797920311fd9f), UINT64_C(0x3e7d470cb7048587),
+        UINT64_C(0x7e5a5776b78934e8), UINT64_C(0x064c1a08a8a2adb8),
+        UINT64_C(0x208a5812b60a85b1), UINT64_C(0x4029438f861ac6a4),
+    };
     const unsigned row = (wrapped_y >> 4) & 31;
     if (!s_bg2_plane)
         s_bg2_plane = KnownBackground() ? 1 : 2;
@@ -510,6 +529,8 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
             expected = g_ram[0x21a] == 50 ? s_bg3_snow_night_rows[row] : s_bg3_go_mario_rows[row];
         else if (bg3_ts == 28)
             expected = s_bg3_night_flight_rows[row];
+        else if (bg3_ts == 13)
+            expected = s_bg3_raphael_castle_rows[row];
         s_bg3_rows[row] = s_bg2_plane == 1 && PPU_mode(g_ppu) == 1 &&
             PPU_bigTiles(g_ppu, 2) && g_ppu->bgXsc[2] == 0x34 &&
             PPU_bgTileAdr(g_ppu, 2) == 0x2000 && expected && hash == expected ? 1 : 2;
@@ -518,7 +539,7 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
      * (CODE_01DF45); their modified rows must never wrap into margins. */
     WsShadowSetWorld(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
     WsShadowSetScroll(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
-    const uint16_t fallback = bg3_ts == 28 ? 0x01db : (bg3_ts == 15 ? 0x01db : (bg3_ts == 1 ? 0x052b : (bg3_ts == 27 ? 0x0143 : (bg3_ts == 5 ? (g_ram[0x21a] == 27 ? 0x01ce : (g_ram[0x21a] == 29 ? 0x0126 : (g_ram[0x21a] == 31 ? 0x0564 : 0x2100))) : (bg3_ts == 21 ? 0x015e : (bg3_ts == 20 ? (g_ram[0x21a] == 37 ? 0x0143 : (g_ram[0x21a] == 41 ? (row < 27 ? 0x01ce : (row == 27 ? 0x21e0 : 0x21cc)) : 0x8188)) : (bg3_ts == 22 ? (g_ram[0x21a] == 54 ? 0x0185 : 0x01ce) : (bg3_ts == 19 ? 0x0126 : (bg3_ts == 4 ? (g_ram[0x21a] == 50 ? 0x0185 : 0x01db) : (bg3_ts == 7 ? (g_ram[0x21a] == 52 ? 0x015e : ((row & 1) ? 0x01e4 : 0x01e0)) : 0x0185))))))))));
+    const uint16_t fallback = bg3_ts == 13 ? 0x0185 : (bg3_ts == 28 ? 0x01db : (bg3_ts == 15 ? 0x01db : (bg3_ts == 1 ? 0x052b : (bg3_ts == 27 ? 0x0143 : (bg3_ts == 5 ? (g_ram[0x21a] == 27 ? 0x01ce : (g_ram[0x21a] == 29 ? 0x0126 : (g_ram[0x21a] == 31 ? 0x0564 : 0x2100))) : (bg3_ts == 21 ? 0x015e : (bg3_ts == 20 ? (g_ram[0x21a] == 37 ? 0x0143 : (g_ram[0x21a] == 41 ? (row < 27 ? 0x01ce : (row == 27 ? 0x21e0 : 0x21cc)) : 0x8188)) : (bg3_ts == 22 ? (g_ram[0x21a] == 54 ? 0x0185 : 0x01ce) : (bg3_ts == 19 ? 0x0126 : (bg3_ts == 4 ? (g_ram[0x21a] == 50 ? 0x0185 : 0x01db) : (bg3_ts == 7 ? (g_ram[0x21a] == 52 ? 0x015e : ((row & 1) ? 0x01e4 : 0x01e0)) : 0x0185)))))))))));
     return s_bg3_rows[row] == 1 ? real_tile : fallback;
 }
 
