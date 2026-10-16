@@ -16,7 +16,39 @@ static SDL_Renderer *s_renderer;
 static int s_glow_width, s_glow_height;
 static uint32_t s_source_hash;
 static int s_applied;
+static uint8_t s_backdrop_pixels[32 * 28 * 4];
+static bool s_backdrop_ready;
+static SDL_Texture *s_backdrop_texture;
+static SDL_Renderer *s_backdrop_renderer;
 extern uint8_t g_ram[0x20000];
+
+static void DownsampleBackdrop(const uint8_t *field, int width, int height) {
+    if (width != 256 || height != 224 || !field) {
+        s_backdrop_ready = false;
+        return;
+    }
+    for (int by = 0; by < 28; ++by) {
+        for (int bx = 0; bx < 32; ++bx) {
+            uint32_t sum_b = 0, sum_g = 0, sum_r = 0;
+            const int src_y = by * 8;
+            const int src_x = bx * 8;
+            for (int dy = 0; dy < 8; ++dy) {
+                const uint8_t *row = field + ((src_y + dy) * 256 + src_x) * 4;
+                for (int dx = 0; dx < 8; ++dx) {
+                    sum_b += row[dx * 4 + 0];
+                    sum_g += row[dx * 4 + 1];
+                    sum_r += row[dx * 4 + 2];
+                }
+            }
+            const int out_idx = (by * 32 + bx) * 4;
+            s_backdrop_pixels[out_idx + 0] = (uint8_t)((sum_b * 115u) >> 14);
+            s_backdrop_pixels[out_idx + 1] = (uint8_t)((sum_g * 115u) >> 14);
+            s_backdrop_pixels[out_idx + 2] = (uint8_t)((sum_r * 115u) >> 14);
+            s_backdrop_pixels[out_idx + 3] = 255;
+        }
+    }
+    s_backdrop_ready = true;
+}
 
 static void Configure(int soft, int lighting) {
     atomic_store(&s_soft, soft != 0);
@@ -52,6 +84,11 @@ int YoshiComposeFrame(uint8_t *dst, size_t pitch, const uint8_t *field,
         s_source_hash = 2166136261u;
         for (size_t i = 0; i < size; ++i)
             s_source_hash = (s_source_hash ^ field[i]) * 16777619u;
+    }
+    if (width == 256 && height == 224 && !getenv("SNESRECOMP_NO_THEMED_FALLBACK")) {
+        DownsampleBackdrop(field, width, height);
+    } else {
+        s_backdrop_ready = false;
     }
     if ((!atomic_load(&s_lighting) && !atomic_load(&s_soft) &&
          !getenv("SNESRECOMP_PRESENT_TEST_CYCLE")) ||
@@ -108,9 +145,47 @@ bool YoshiRenderPresentation(SDL_Renderer *renderer, SDL_Texture *texture,
     const int g = lighting ? s_ambient[1] : 255;
     const int b = lighting ? s_ambient[2] : 255;
     s_applied = 0;
+
+    int out_w = 0, out_h = 0;
+    bool has_pillars = false;
+    if (!getenv("SNESRECOMP_NO_THEMED_FALLBACK") && s_backdrop_ready &&
+        snesrecomp_sdl_get_render_output_size(renderer, &out_w, &out_h)) {
+        if (destination->x > 0 || (destination->x + destination->w) < out_w) {
+            has_pillars = true;
+        }
+    }
+    if (has_pillars) {
+        if (s_backdrop_renderer != renderer || !s_backdrop_texture) {
+            if (s_backdrop_texture) SDL_DestroyTexture(s_backdrop_texture);
+            s_backdrop_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
+                                                   SDL_TEXTUREACCESS_STREAMING, 32, 28);
+            s_backdrop_renderer = renderer;
+        }
+        if (s_backdrop_texture) {
+            SDL_UpdateTexture(s_backdrop_texture, NULL, s_backdrop_pixels, 32 * 4);
+            snesrecomp_sdl_set_texture_linear(s_backdrop_texture, true);
+#if SNESRECOMP_SDL3
+            SDL_FRect bg_src = {0.0f, 0.0f, 32.0f, 28.0f};
+            SDL_FRect bg_dst = {0.0f, 0.0f, (float)out_w, (float)out_h};
+            SDL_RenderTexture(renderer, s_backdrop_texture, &bg_src, &bg_dst);
+#else
+            SDL_Rect bg_src = {0, 0, 32, 28};
+            SDL_Rect bg_dst = {0, 0, out_w, out_h};
+            snesrecomp_sdl_render_texture(renderer, s_backdrop_texture, &bg_src, &bg_dst);
+#endif
+            s_applied |= 4;
+        }
+    }
+
     snesrecomp_sdl_set_texture_linear(texture, soft);
     Mod(texture, 255, 255, 255);
-    if (!soft && !lighting) return false;
+    if (!soft && !lighting) {
+        if (has_pillars) {
+            Draw(renderer, texture, source, destination, 0, 0);
+            return true;
+        }
+        return false;
+    }
     const SDL_BlendMode add = SDL_ComposeCustomBlendMode(
         SDL_BLENDFACTOR_ONE, SDL_BLENDFACTOR_ONE, SDL_BLENDOPERATION_ADD,
         SDL_BLENDFACTOR_ONE, SDL_BLENDFACTOR_ZERO, SDL_BLENDOPERATION_ADD);
@@ -166,6 +241,9 @@ bool YoshiRenderPresentation(SDL_Renderer *renderer, SDL_Texture *texture,
 void YoshiPresentationReset(void) {
     if (s_glow) SDL_DestroyTexture(s_glow);
     s_glow = NULL; s_renderer = NULL;
+    if (s_backdrop_texture) SDL_DestroyTexture(s_backdrop_texture);
+    s_backdrop_texture = NULL; s_backdrop_renderer = NULL;
+    s_backdrop_ready = false;
     free(s_bright); s_bright = NULL; s_bright_capacity = 0;
     s_bright_ready = false;
 }
