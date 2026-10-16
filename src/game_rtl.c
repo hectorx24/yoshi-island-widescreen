@@ -120,6 +120,10 @@ static bool KnownBackground(void) {
             /* Individually qualified Level 2-1 (Visit Koopa And Para-Koopa). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 12 ||
                 g_ram[0x21b] || g_ram[0x146] != 11 || g_ram[0x147]) return false;
+        } else if (header == 21) {
+            /* Individually qualified Level 2-2 (The Baseball Boys). */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 13 ||
+                g_ram[0x21b] || g_ram[0x146] || g_ram[0x147]) return false;
         } else {
             return false;
         }
