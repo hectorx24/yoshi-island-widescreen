@@ -1,0 +1,139 @@
+# Diagnostic only: WRAM21A selects 1-2 (The Cave Of Chomp Rock) after map transition.
+# Diagnostic investigation: captures native 256x224 baseline before any widescreen modifications.
+turbo on
+wait 1200
+press start 8
+wait 180
+press start 8
+wait 180
+press start 8
+wait 1800
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+wait 300
+press start 8
+wait 180
+press a 8
+wait 300
+press right 120
+press b 15
+wait 60
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+poke 21a 0100
+wait 400
+dump level1_2_loaded
+press right+b+y 60
+dump level1_2_run01
+press right+b+y 60
+dump level1_2_run02
+press right+b+y 60
+dump level1_2_run03
+press right+b+y 60
+dump level1_2_run04
+press right+b+y 60
+dump level1_2_run05
+quit

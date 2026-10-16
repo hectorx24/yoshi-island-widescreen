@@ -176,4 +176,15 @@ wait 180
 dump boss_giant
 wait 180
 dump boss_battle
+# Battle movement and arena exploration:
+# Yoshi moves right across the arena towards Burt and right wall
+press right 60
+dump boss_move_right
+press right+b 45
+dump boss_jump
+press right 60
+dump boss_arena_right
+press left 60
+dump boss_move_left
 quit
+
