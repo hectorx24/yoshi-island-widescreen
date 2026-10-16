@@ -108,6 +108,10 @@ static bool KnownBackground(void) {
             /* Individually qualified Level 1-3 Crystal Cavern. */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 2 ||
                 g_ram[0x21b] || g_ram[0x146] != 5 || g_ram[0x147]) return false;
+        } else if (header == 8) {
+            /* Individually qualified Level 1-7 (Touch Fuzzy, Get Dizzy). */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 6 ||
+                g_ram[0x21b] || g_ram[0x146] != 3 || g_ram[0x147]) return false;
         } else {
             return false;
         }
@@ -246,7 +250,8 @@ static bool VerifiedMapRow(unsigned wrapped_y, unsigned hscroll,
     *world_y = WorldPhase(camera_y, wrapped_y);
     if (!g_snes || !g_snes->cart || !g_snes->cart->superfx ||
         (g_ram[0x118] != 0x0e && g_ram[0x118] != 0x0f) ||
-        PPU_mode(g_ppu) != 1 || PPU_bigTiles(g_ppu, 0) ||
+        (PPU_mode(g_ppu) != 1 && PPU_mode(g_ppu) != 2) ||
+        PPU_bigTiles(g_ppu, 0) ||
         (g_ppu->bgXsc[0] & 3) != 1 ||
         *world_x < 0 || *world_y < 0 || *world_y >= 2048) return false;
     const unsigned ty = (unsigned)*world_y / 8;

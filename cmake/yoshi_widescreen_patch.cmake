@@ -116,6 +116,24 @@ string(REPLACE "extern uint16_t YoshiBg3MarginTile(uint16_t);\n    return YoshiB
 file(WRITE "${_yoshi_ws_shadow}" "${_yoshi_ws_source}")
 unset(_yoshi_ws_shadow)
 unset(_yoshi_ws_source)
+
+# PPU Mode 2 (OPT) margin resolution: route margin cells through WsShadowTile
+set(_yoshi_ppu "${SNESRECOMP_ROOT}/runner/src/snes/ppu.c")
+file(READ "${_yoshi_ppu}" _yoshi_ppu_source)
+string(FIND "${_yoshi_ppu_source}" "WsShadowLayerActive((int)layer)" _yoshi_ppu_at)
+if(_yoshi_ppu_at EQUAL -1)
+  string(REPLACE "  const int tileadr = PPU_bgTileAdr(ppu, layer);\n  const unsigned hscroll = ppu->hScroll[layer];"
+    "  const int tileadr = PPU_bgTileAdr(ppu, layer);\n  const bool ws_shadow = WsShadowLayerActive((int)layer);\n  const unsigned hscroll = ppu->hScroll[layer];"
+    _yoshi_ppu_source "${_yoshi_ppu_source}")
+  string(REPLACE "        uint16 tile = PpuReadTilemapEntry(\n            ppu, layer, source_x >> tile_shift, sy >> tile_shift);\n        unsigned px = source_x & tile_mask;"
+    "        uint16 tile = PpuReadTilemapEntry(\n            ppu, layer, source_x >> tile_shift, sy >> tile_shift);\n        if (ws_shadow) {\n          tile = WsShadowTile((int)layer, screen_x + (int)i, (uint32_t)sy,\n                              (uint16_t)hoffset, 0, tile);\n        }\n        unsigned px = source_x & tile_mask;"
+    _yoshi_ppu_source "${_yoshi_ppu_source}")
+  file(WRITE "${_yoshi_ppu}" "${_yoshi_ppu_source}")
+endif()
+unset(_yoshi_ppu)
+unset(_yoshi_ppu_source)
+unset(_yoshi_ppu_at)
+
 unset(_yoshi_ws_old)
 unset(_yoshi_ws_new)
 unset(_yoshi_ws_patched)
