@@ -132,8 +132,74 @@ press right+b+y 60
 dump level1_2_run02
 press right+b+y 60
 dump level1_2_run03
-press right+b+y 60
+# Walk into valley, swallow shy-guy with tongue
+press right 30
+press right+b 20
 dump level1_2_run04
-press right+b+y 60
+# Swallow first Shy-Guy
+press y 15
+wait 15
+press down 10
 dump level1_2_run05
+# Run up to the edge of the mud pit on solid grass
+press right+y 25
+dump level1_2_run06
+# Wait for Chomp Rock to fall into the mud pit
+wait 30
+dump level1_2_run07
+wait 30
+dump level1_2_run08
+# Long running flutter jump holding B+Y to sail across to the hill
+press right+b+y 100
+dump level1_2_run09
+# Land and advance past the Dayzee
+press right+y 30
+dump level1_2_run10
+# Jump down from the hill and run right across Screen 2
+press right+b+y 40
+dump level1_2_run11
+press right+y 60
+dump level1_2_run12
+press right+b+y 50
+dump level1_2_run13
+# Sprint across flat grassy plain through Screens 3, 4, 5 towards cave
+press right+y 120
+dump level1_2_run14
+press right+y 120
+dump level1_2_run15
+press right+y 120
+dump level1_2_run16
+# Sustained jump holding B+Y across the 2nd mud pit
+press right+b+y 100
+dump level1_2_run17
+# Touch down on small grass island
+press right+y 15
+dump level1_2_run18
+# High jump from island over the 3rd mud pit onto solid terrain
+press right+b+y 70
+dump level1_2_run19
+# Run right towards the cave entrance
+press right+y 60
+dump level1_2_run20
+# Jump over blue Dayzee and niche
+press right+b+y 50
+dump level1_2_run21
+# Sprint into the mountain cave entrance (Screen 6, X=1792)
+press right+y 80
+dump level1_2_run22
+# Jump over wooden post and red Shy-Guy past the arrow sign
+press right+b+y 50
+dump level1_2_run23
+# Run into the mountain cave opening
+press right+y 60
+dump level1_2_run24
+# Jump over the wooden post
+press right+b+y 25
+dump level1_2_run25
+# Push through the flipper gate into the dark cave tunnel
+press right+y 50
+dump level1_2_run26
+# Advance deeper into the cave
+press right+y 60
+dump level1_2_run27
 quit
