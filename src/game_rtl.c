@@ -173,6 +173,10 @@ static bool KnownBackground(void) {
             /* Individually qualified Level 3-8 (Naval Piranha's Castle). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 31 ||
                 g_ram[0x21b] || g_ram[0x146] != 5 || g_ram[0x147]) return false;
+        } else if (header == 30) {
+            /* Individually qualified Level 4-5 (Chomp Rock Zone). */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 40 ||
+                g_ram[0x21b] || g_ram[0x146] || g_ram[0x147]) return false;
         } else {
             return false;
         }
@@ -879,7 +883,8 @@ void GameDrawPpuFrame(void)
          KnownPlane(1, UINT64_C(0x7ef7e2caa7953c75)) ||
          KnownPlane(1, UINT64_C(0xacf4c993fa513172)) ||
          KnownPlane(1, UINT64_C(0x6d4de29e88c55457)) ||
-         KnownPlane(1, UINT64_C(0xeb560869715223e0))) ? 1 : 0);
+         KnownPlane(1, UINT64_C(0xeb560869715223e0)) ||
+         KnownPlane(1, UINT64_C(0x6fa20925f750ef82))) ? 1 : 0);
     if (g_ppu->extraLeftCur || g_ppu->extraRightCur)
         snes_beam_frame_driver_draw_ppu_frame_observed(BlackUnverifiedMargins, NULL);
     else
