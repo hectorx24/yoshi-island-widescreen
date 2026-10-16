@@ -149,6 +149,10 @@ static bool KnownBackground(void) {
             /* Individually qualified Level 3-1 (Welcome To Monkey World!). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 24 ||
                 g_ram[0x21b] || g_ram[0x146] != 11 || g_ram[0x147]) return false;
+        } else if (header == 10) {
+            /* Individually qualified Level 3-3 (Nep-Enut's Domain). */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 26 ||
+                g_ram[0x21b] || g_ram[0x146] != 11 || g_ram[0x147]) return false;
         } else {
             return false;
         }
@@ -275,6 +279,24 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
         UINT64_C(0x343a60cf7ebd8265), UINT64_C(0x343a60cf7ebd8265),
         UINT64_C(0x343a60cf7ebd8265), UINT64_C(0x343a60cf7ebd8265),
     };
+    static const uint64_t s_bg3_nep_enut_rows[32] = {
+        UINT64_C(0xfa140632c28ef617), UINT64_C(0xd788d4804e9e6ebc),
+        UINT64_C(0x96469e0db62d10dd), UINT64_C(0xc0a1d4462628b7a5),
+        UINT64_C(0x8f46a9bd6e802f57), UINT64_C(0x38251b9f3c5a89d9),
+        UINT64_C(0x34bf1e786ef726a1), UINT64_C(0x107672cac3149307),
+        UINT64_C(0x6aa7780123499664), UINT64_C(0x95a133126fc0260f),
+        UINT64_C(0x5a495bb5e02dd81f), UINT64_C(0x92f8f3dcbbb06cf1),
+        UINT64_C(0xebbbd13b1bf3a07a), UINT64_C(0x759e08ed5026dcfd),
+        UINT64_C(0x621faa996833a515), UINT64_C(0xe53085094ab98ef3),
+        UINT64_C(0x6c233d2a729ab4fb), UINT64_C(0x92c0dcdbd07b42b3),
+        UINT64_C(0xa02740c2331791f5), UINT64_C(0x6d229d7c42563847),
+        UINT64_C(0x977cd7d4bbbc3274), UINT64_C(0xa40d709c8614ee33),
+        UINT64_C(0x92b5795ad364767c), UINT64_C(0x5b8d69711007599a),
+        UINT64_C(0xac4a272658236170), UINT64_C(0xfc72f8e32a88ab1a),
+        UINT64_C(0x2cc173a3b9ad8cf4), UINT64_C(0xf11c33ae8a6ff852),
+        UINT64_C(0x63480f323ad45ad0), UINT64_C(0xd8678c4ac21ac0f2),
+        UINT64_C(0xe78fd99271432294), UINT64_C(0x3c212671e2a8f68a),
+    };
     const unsigned row = (wrapped_y >> 4) & 31;
     if (!s_bg2_plane)
         s_bg2_plane = KnownBackground() ? 1 : 2;
@@ -298,6 +320,8 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
             expected = s_bg3_jungle_rows[row];
         else if (bg3_ts == 27)
             expected = s_bg3_jungle_rhythm_rows[row];
+        else if (bg3_ts == 5)
+            expected = s_bg3_nep_enut_rows[row];
         s_bg3_rows[row] = s_bg2_plane == 1 && PPU_mode(g_ppu) == 1 &&
             PPU_bigTiles(g_ppu, 2) && g_ppu->bgXsc[2] == 0x34 &&
             PPU_bgTileAdr(g_ppu, 2) == 0x2000 && expected && hash == expected ? 1 : 2;
@@ -306,7 +330,7 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
      * (CODE_01DF45); their modified rows must never wrap into margins. */
     WsShadowSetWorld(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
     WsShadowSetScroll(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
-    const uint16_t fallback = bg3_ts == 15 ? 0x01db : (bg3_ts == 1 ? 0x052b : (bg3_ts == 27 ? 0x0143 : 0x0185));
+    const uint16_t fallback = bg3_ts == 15 ? 0x01db : (bg3_ts == 1 ? 0x052b : (bg3_ts == 27 ? 0x0143 : (bg3_ts == 5 ? 0x2100 : 0x0185)));
     return s_bg3_rows[row] == 1 ? real_tile : fallback;
 }
 
@@ -747,7 +771,8 @@ void GameDrawPpuFrame(void)
          KnownPlane(1, UINT64_C(0x096eb6f63784aef3)) ||
          KnownPlane(1, UINT64_C(0xbf3d1aeecd343863)) ||
          KnownPlane(1, UINT64_C(0x092f46b0b1817336)) ||
-         KnownPlane(1, UINT64_C(0x651dd75517727c34))) ? 1 : 0);
+         KnownPlane(1, UINT64_C(0x651dd75517727c34)) ||
+         KnownPlane(1, UINT64_C(0xa17e5ff8fbe84e98))) ? 1 : 0);
     if (g_ppu->extraLeftCur || g_ppu->extraRightCur)
         snes_beam_frame_driver_draw_ppu_frame_observed(BlackUnverifiedMargins, NULL);
     else
