@@ -215,11 +215,12 @@ static bool KnownBackground(void) {
             bool is_6_7 = (g_ram[0x21a] == 66 && g_ram[0x146] == 5);
             if (!is_4_5 && !is_6_7) return false;
         } else if (header == 29) {
-            /* Individually qualified Level 1-1 (Make Eggs, Throw Eggs) and Level 5-2 (Ride The Ski Lifts). */
+            /* Individually qualified Level 1-1 (Make Eggs, Throw Eggs), Level 1-6 (Shy-Guys On Stilts), and Level 5-2 (Ride The Ski Lifts). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147]) return false;
             bool is_1_1 = (g_ram[0x21a] == 0 && g_ram[0x146] == 0);
+            bool is_1_6 = (g_ram[0x21a] == 5 && g_ram[0x146] == 5);
             bool is_5_2 = (g_ram[0x21a] == 49 && g_ram[0x146] == 0);
-            if (!is_1_1 && !is_5_2) return false;
+            if (!is_1_1 && !is_1_6 && !is_5_2) return false;
         } else if (header == 18) {
             /* Individually qualified Level 5-5 (Goonie Rides!), Level 5-6 (Night Flight - Balloon Trip), Level 5-8 (Raphael Raven's Castle), and Extra 5 (Kamek's Revenge). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147]) return false;
