@@ -153,6 +153,10 @@ static bool KnownBackground(void) {
             /* Individually qualified Level 3-3 (Nep-Enut's Domain). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 26 ||
                 g_ram[0x21b] || g_ram[0x146] != 11 || g_ram[0x147]) return false;
+        } else if (header == 2) {
+            /* Individually qualified Level 3-4 (Prince Froggy's Fort). */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 27 ||
+                g_ram[0x21b] || g_ram[0x146] != 5 || g_ram[0x147]) return false;
         } else {
             return false;
         }
@@ -321,7 +325,7 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
         else if (bg3_ts == 27)
             expected = s_bg3_jungle_rhythm_rows[row];
         else if (bg3_ts == 5)
-            expected = s_bg3_nep_enut_rows[row];
+            expected = g_ram[0x21a] == 27 ? UINT64_C(0x0410753426052ee5) : s_bg3_nep_enut_rows[row];
         s_bg3_rows[row] = s_bg2_plane == 1 && PPU_mode(g_ppu) == 1 &&
             PPU_bigTiles(g_ppu, 2) && g_ppu->bgXsc[2] == 0x34 &&
             PPU_bgTileAdr(g_ppu, 2) == 0x2000 && expected && hash == expected ? 1 : 2;
@@ -330,7 +334,7 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
      * (CODE_01DF45); their modified rows must never wrap into margins. */
     WsShadowSetWorld(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
     WsShadowSetScroll(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
-    const uint16_t fallback = bg3_ts == 15 ? 0x01db : (bg3_ts == 1 ? 0x052b : (bg3_ts == 27 ? 0x0143 : (bg3_ts == 5 ? 0x2100 : 0x0185)));
+    const uint16_t fallback = bg3_ts == 15 ? 0x01db : (bg3_ts == 1 ? 0x052b : (bg3_ts == 27 ? 0x0143 : (bg3_ts == 5 ? (g_ram[0x21a] == 27 ? 0x01ce : 0x2100) : 0x0185)));
     return s_bg3_rows[row] == 1 ? real_tile : fallback;
 }
 
@@ -772,7 +776,8 @@ void GameDrawPpuFrame(void)
          KnownPlane(1, UINT64_C(0xbf3d1aeecd343863)) ||
          KnownPlane(1, UINT64_C(0x092f46b0b1817336)) ||
          KnownPlane(1, UINT64_C(0x651dd75517727c34)) ||
-         KnownPlane(1, UINT64_C(0xa17e5ff8fbe84e98))) ? 1 : 0);
+         KnownPlane(1, UINT64_C(0xa17e5ff8fbe84e98)) ||
+         KnownPlane(1, UINT64_C(0x7343767b921cae1a))) ? 1 : 0);
     if (g_ppu->extraLeftCur || g_ppu->extraRightCur)
         snes_beam_frame_driver_draw_ppu_frame_observed(BlackUnverifiedMargins, NULL);
     else
