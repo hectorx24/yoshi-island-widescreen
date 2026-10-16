@@ -121,9 +121,11 @@ static bool KnownBackground(void) {
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 7 ||
                 g_ram[0x21b] || g_ram[0x146] != 5 || g_ram[0x147]) return false;
         } else if (header == 4) {
-            /* Individually qualified Level 2-1 (Visit Koopa And Para-Koopa). */
-            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 12 ||
-                g_ram[0x21b] || g_ram[0x146] != 11 || g_ram[0x147]) return false;
+            /* Individually qualified Level 2-1 (Visit Koopa And Para-Koopa) and Level 2-7 (Lakitu's Wall). */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147]) return false;
+            bool is_2_1 = (g_ram[0x21a] == 12 && g_ram[0x146] == 11);
+            bool is_2_7 = (g_ram[0x21a] == 18 && g_ram[0x146] == 7);
+            if (!is_2_1 && !is_2_7) return false;
         } else if (header == 21) {
             /* Individually qualified Level 2-2 (The Baseball Boys). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 13 ||
