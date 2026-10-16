@@ -149,9 +149,9 @@ static bool KnownBackground(void) {
             bool is_4_4 = (g_ram[0x21a] == 39 && g_ram[0x146] == 5);
             if (!is_2_6 && !is_4_4) return false;
         } else if (header == 25) {
-            /* Individually qualified Level 2-8 (The Potted Ghost's Castle). */
-            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 19 ||
-                g_ram[0x21b] || g_ram[0x146] != 11 || g_ram[0x147]) return false;
+            /* Individually qualified Level 2-8 (The Potted Ghost's Castle) and Level 4-8 (Hookbill The Koopa's Castle). */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x146] != 11 || g_ram[0x147]) return false;
+            if (g_ram[0x21a] != 19 && g_ram[0x21a] != 43) return false;
         } else if (header == 1) {
             /* Individually qualified Level 3-1 (Welcome To Monkey World!). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 24 ||
