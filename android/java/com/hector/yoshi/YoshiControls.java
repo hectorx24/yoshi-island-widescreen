@@ -65,18 +65,28 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
         held.clear();
         invalidate();
     }
-    private float scale() { return Math.min(getHeight() / 448f, getWidth() / 800f); }
+    private float scale() {
+        float usableW = getWidth() - getPaddingLeft() - getPaddingRight();
+        float usableH = getHeight() - getPaddingTop() - getPaddingBottom();
+        if (usableW <= 0) usableW = getWidth();
+        if (usableH <= 0) usableH = getHeight();
+        return Math.min(usableH / 448f, usableW / 800f);
+    }
     private float[][] buttons() {
-        float s = scale(), w = getWidth(), h = getHeight();
+        float s = scale();
+        float pl = getPaddingLeft(), pr = getPaddingRight();
+        float pt = getPaddingTop(), pb = getPaddingBottom();
+        float w = getWidth() - pr, h = getHeight() - pb;
+        float midX = pl + (getWidth() - pl - pr) / 2f;
         return new float[][] {
             {w - 84*s, h - 54*s, KeyEvent.KEYCODE_Z}, // B jump
             {w - 38*s, h - 100*s, KeyEvent.KEYCODE_X}, // A egg
             {w - 130*s, h - 100*s, KeyEvent.KEYCODE_A}, // Y tongue
             {w - 84*s, h - 146*s, KeyEvent.KEYCODE_S}, // X
-            {w/2 - 42*s, h - 25*s, KeyEvent.KEYCODE_SHIFT_RIGHT},
-            {w/2 + 42*s, h - 25*s, KeyEvent.KEYCODE_ENTER},
-            {40*s, 36*s, KeyEvent.KEYCODE_C},
-            {w - 90*s, 36*s, KeyEvent.KEYCODE_V}
+            {midX - 42*s, h - 25*s, KeyEvent.KEYCODE_SHIFT_RIGHT},
+            {midX + 42*s, h - 25*s, KeyEvent.KEYCODE_ENTER},
+            {pl + 40*s, pt + 36*s, KeyEvent.KEYCODE_C},
+            {w - 90*s, pt + 36*s, KeyEvent.KEYCODE_V}
         };
     }
     private boolean near(float x, float y, float cx, float cy, float radius) {
@@ -85,7 +95,8 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
     }
     private void keysAt(float x, float y, Set<Integer> keys) {
         if (!visible) return;
-        float s = scale(), cx = 76*s, cy = getHeight() - 80*s;
+        float s = scale(), pl = getPaddingLeft(), pb = getPaddingBottom();
+        float cx = pl + 76*s, cy = getHeight() - pb - 80*s;
         if (near(x, y, cx, cy, 58*s)) {
             if (x < cx - 12*s) keys.add(KeyEvent.KEYCODE_DPAD_LEFT);
             if (x > cx + 12*s) keys.add(KeyEvent.KEYCODE_DPAD_RIGHT);
@@ -138,8 +149,9 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
     }
     @Override public boolean onTouchEvent(MotionEvent event) {
         float s = scale();
+        float pr = getPaddingRight(), pt = getPaddingTop();
         if (event.getActionMasked() == MotionEvent.ACTION_DOWN &&
-            near(event.getX(), event.getY(), getWidth() - 24*s, 24*s, 22*s)) {
+            near(event.getX(), event.getY(), getWidth() - pr - 24*s, pt + 24*s, 22*s)) {
             options();
             return true;
         }
@@ -174,17 +186,19 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
     }
     @Override protected void onDraw(Canvas canvas) {
         float s = scale();
+        float pl = getPaddingLeft(), pr = getPaddingRight();
+        float pt = getPaddingTop(), pb = getPaddingBottom();
         if (visible) {
             String[] names = {"B", "A", "Y", "X", "Select", "Start", "L", "R"};
             float[][] bs = buttons();
             for (int i = 0; i < bs.length; ++i)
                 circle(canvas, bs[i][0], bs[i][1], (i < 4 ? 22 : 20)*s, names[i], (int)bs[i][2]);
-            float x = 76*s, y = getHeight() - 80*s;
+            float x = pl + 76*s, y = getHeight() - pb - 80*s;
             circle(canvas, x - 34*s, y, 22*s, "<", KeyEvent.KEYCODE_DPAD_LEFT);
             circle(canvas, x + 34*s, y, 22*s, ">", KeyEvent.KEYCODE_DPAD_RIGHT);
             circle(canvas, x, y - 34*s, 22*s, "^", KeyEvent.KEYCODE_DPAD_UP);
             circle(canvas, x, y + 34*s, 22*s, "v", KeyEvent.KEYCODE_DPAD_DOWN);
         }
-        circle(canvas, getWidth() - 24*s, 24*s, 16*s, "...", -1);
+        circle(canvas, getWidth() - pr - 24*s, pt + 24*s, 16*s, "...", -1);
     }
 }

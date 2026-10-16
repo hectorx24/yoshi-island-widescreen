@@ -125,11 +125,10 @@ public final class YoshiActivity extends SDLActivity {
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN |
             View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
             View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
-        // SDL's surface stays inside the platform safe area. No cutout is
-        // assumed safe merely because the display is wide.
+        // SDL surface draws edge-to-edge into display cutouts on landscape short edges
         if (android.os.Build.VERSION.SDK_INT >= 28) {
             WindowManager.LayoutParams params = getWindow().getAttributes();
-            params.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER;
+            params.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
             getWindow().setAttributes(params);
         }
         if (android.os.Build.VERSION.SDK_INT >= 30) {
@@ -138,7 +137,10 @@ public final class YoshiActivity extends SDLActivity {
                 @Override public WindowInsets onApplyWindowInsets(View view, WindowInsets insets) {
                     android.graphics.Insets safe = insets.getInsets(WindowInsets.Type.displayCutout() |
                                                                      WindowInsets.Type.systemBars());
-                    view.setPadding(safe.left, safe.top, safe.right, safe.bottom);
+                    view.setPadding(0, 0, 0, 0);
+                    if (controls != null) {
+                        controls.setPadding(safe.left, safe.top, safe.right, safe.bottom);
+                    }
                     return insets;
                 }
             });

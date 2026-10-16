@@ -44,7 +44,7 @@ def main():
     (out/'assets/licenses').mkdir(exist_ok=True)
     shutil.copy2(root/'upstream/rcheevos/LICENSE',out/'assets/licenses/rcheevos.txt')
     unsigned=out/'artifacts/unsigned.apk'
-    run(bt/'aapt','package','-f','--debug-mode','-M',root/'android/AndroidManifest.xml','-I',jar,'-A',out/'assets','-F',unsigned)
+    run(bt/'aapt','package','-f','--debug-mode','-M',root/'android/AndroidManifest.xml','-S',root/'android/res','-I',jar,'-A',out/'assets','-F',unsigned)
     with zipfile.ZipFile(unsigned,'a',compression=zipfile.ZIP_DEFLATED) as z:
         z.write(out/'dex/classes.dex','classes.dex')
         z.write(build/'libYoshiIsland.so','lib/arm64-v8a/libYoshiIsland.so')
