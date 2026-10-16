@@ -156,9 +156,11 @@ static bool KnownBackground(void) {
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 24 ||
                 g_ram[0x21b] || g_ram[0x146] != 11 || g_ram[0x147]) return false;
         } else if (header == 10) {
-            /* Individually qualified Level 3-3 (Nep-Enut's Domain). */
-            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 26 ||
-                g_ram[0x21b] || g_ram[0x146] != 11 || g_ram[0x147]) return false;
+            /* Individually qualified Level 3-3 (Nep-Enut's Domain) and Level 4-6 (Lake Nostalgia). */
+            if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147]) return false;
+            bool is_3_3 = (g_ram[0x21a] == 26 && g_ram[0x146] == 11);
+            bool is_4_6 = (g_ram[0x21a] == 41 && g_ram[0x146] == 0);
+            if (!is_3_3 && !is_4_6) return false;
         } else if (header == 2) {
             /* Individually qualified Level 3-4 (Prince Froggy's Fort). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 27 ||
@@ -423,7 +425,8 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
         else if (bg3_ts == 21)
             expected = s_bg3_jammin_rows[row];
         else if (bg3_ts == 20)
-            expected = g_ram[0x21a] == 37 ? s_bg3_jungle_rhythm_rows[row] : s_bg3_go_mario_rows[row];
+            expected = g_ram[0x21a] == 37 ? s_bg3_jungle_rhythm_rows[row] :
+                       (g_ram[0x21a] == 41 ? (row < 27 ? UINT64_C(0x0410753426052ee5) : (row == 27 ? UINT64_C(0x4eb699a0a9ff07a5) : UINT64_C(0xc040ffef5d65ae25))) : s_bg3_go_mario_rows[row]);
         else if (bg3_ts == 22)
             expected = UINT64_C(0x0410753426052ee5);
         s_bg3_rows[row] = s_bg2_plane == 1 && PPU_mode(g_ppu) == 1 &&
@@ -434,7 +437,7 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
      * (CODE_01DF45); their modified rows must never wrap into margins. */
     WsShadowSetWorld(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
     WsShadowSetScroll(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
-    const uint16_t fallback = bg3_ts == 15 ? 0x01db : (bg3_ts == 1 ? 0x052b : (bg3_ts == 27 ? 0x0143 : (bg3_ts == 5 ? (g_ram[0x21a] == 27 ? 0x01ce : (g_ram[0x21a] == 29 ? 0x0126 : (g_ram[0x21a] == 31 ? 0x0564 : 0x2100))) : (bg3_ts == 21 ? 0x015e : (bg3_ts == 20 ? (g_ram[0x21a] == 37 ? 0x0143 : 0x8188) : (bg3_ts == 22 ? 0x01ce : 0x0185))))));
+    const uint16_t fallback = bg3_ts == 15 ? 0x01db : (bg3_ts == 1 ? 0x052b : (bg3_ts == 27 ? 0x0143 : (bg3_ts == 5 ? (g_ram[0x21a] == 27 ? 0x01ce : (g_ram[0x21a] == 29 ? 0x0126 : (g_ram[0x21a] == 31 ? 0x0564 : 0x2100))) : (bg3_ts == 21 ? 0x015e : (bg3_ts == 20 ? (g_ram[0x21a] == 37 ? 0x0143 : (g_ram[0x21a] == 41 ? (row < 27 ? 0x01ce : (row == 27 ? 0x21e0 : 0x21cc)) : 0x8188)) : (bg3_ts == 22 ? 0x01ce : 0x0185))))));
     return s_bg3_rows[row] == 1 ? real_tile : fallback;
 }
 
