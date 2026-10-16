@@ -1,0 +1,186 @@
+# Diagnostic only: WRAM21A selects 3-3 (Nep-Enut's Domain) after map transition.
+# Diagnostic investigation: captures native 256x224 baseline before any widescreen modifications.
+turbo on
+wait 1200
+press start 8
+wait 180
+press start 8
+wait 180
+press start 8
+wait 1800
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+press a 8
+wait 60
+wait 300
+press start 8
+wait 180
+press a 8
+wait 300
+press right 120
+press b 15
+wait 60
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+press a 8
+wait 30
+press right 120
+press right+b 30
+wait 10
+poke 21a 1f00
+wait 400
+dump level3_8_loaded
+wait 60
+dump level3_8_run01
+press b 30
+wait 30
+dump level3_8_run02
+press down 30
+wait 30
+dump level3_8_run03
+press up 30
+wait 30
+dump level3_8_run04
+press y 30
+wait 30
+dump level3_8_run05
+press a 30
+wait 30
+dump level3_8_run06
+press left 30
+wait 30
+dump level3_8_run07
+press right 30
+wait 30
+dump level3_8_run08
+press b 30
+wait 30
+dump level3_8_run09
+press down 30
+wait 30
+dump level3_8_run10
+quit
