@@ -90,18 +90,20 @@ static bool KnownBackground(void) {
      * their foregrounds, effects and sprites are individually qualified. */
     if (header != 26) {
         if (header == 20) {
-            /* Individually qualified 1-4 entrance hall and Level 2-4 (Bigger Boo's Fort).
+            /* Individually qualified 1-4 entrance hall, Level 2-4 (Bigger Boo's Fort), and Level 5-4 (Sluggy The Unshaven's Fort).
              * The room's original GSU screen layout stays stable as blocks change.
              * A different room/encounter must qualify its own map and effects. */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147] || !g_snes->cart->superfx) return false;
             bool is_1_4 = (g_ram[0x21a] == 3 && g_ram[0x146] == 7);
             bool is_2_4 = (g_ram[0x21a] == 15 && g_ram[0x146] == 0);
-            if (!is_1_4 && !is_2_4) return false;
+            bool is_5_4 = (g_ram[0x21a] == 51 && g_ram[0x146] == 11);
+            if (!is_1_4 && !is_2_4 && !is_5_4) return false;
             uint64_t room = UINT64_C(14695981039346656037);
             for (unsigned i = 0; i < 128; ++i)
                 room = (room ^ g_snes->cart->superfx->ram[0x0caa + i]) * UINT64_C(1099511628211);
             if (is_1_4 && room != UINT64_C(0x666c9488c384aca4)) return false;
             if (is_2_4 && room != UINT64_C(0x04cc798b969635ee)) return false;
+            if (is_5_4 && room != UINT64_C(0xc8eb129a88883582)) return false;
         } else if (header == 14) {
             /* Individually qualified Level 1-2 (The Cave Of Chomp Rock). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21a] != 1 ||
