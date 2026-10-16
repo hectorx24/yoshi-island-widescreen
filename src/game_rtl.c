@@ -180,9 +180,28 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
         UINT64_C(0xd0408ee70fcb4de9), UINT64_C(0xfea017de198b1011),
         UINT64_C(0x7cc7373e48acf535), UINT64_C(0x81fc0a1a1c54866d),
     };
+    static const uint64_t s_bg3_sunset_rows[32] = {
+        UINT64_C(0x50f40f1a8f24237b), UINT64_C(0xfdebb74d08afc7df),
+        UINT64_C(0x0b199788a5083a27), UINT64_C(0xfcaac104f47cd4e0),
+        UINT64_C(0xcac0060210056212), UINT64_C(0x1d4983c2e2c2cc5f),
+        UINT64_C(0x334a521ad51f3e8b), UINT64_C(0x72a5f474ae279d19),
+        UINT64_C(0x1bc671d66cd715ab), UINT64_C(0x90b48bf8e4a828c5),
+        UINT64_C(0x62144830c89a987d), UINT64_C(0x7d7deeaed50ba16b),
+        UINT64_C(0xf3aa2c48abfdbf25), UINT64_C(0x78ed0bea1d6a2a03),
+        UINT64_C(0xc60345b812daf12b), UINT64_C(0xc152b04414866b0b),
+        UINT64_C(0xd42b7eafffabb78a), UINT64_C(0x873fde481138169b),
+        UINT64_C(0xdc392979d9f0ea2b), UINT64_C(0xe25e7d9d0304858d),
+        UINT64_C(0xecc60c3d6f995f2b), UINT64_C(0x3365a6a41439ac3e),
+        UINT64_C(0xbd80783d81d6e382), UINT64_C(0x67903410b7545305),
+        UINT64_C(0x0fcea3e1e65045f3), UINT64_C(0x4d5f736d49c73459),
+        UINT64_C(0x93a06aa4110d16a5), UINT64_C(0x93a06aa4110d16a5),
+        UINT64_C(0x93a06aa4110d16a5), UINT64_C(0x93a06aa4110d16a5),
+        UINT64_C(0x93a06aa4110d16a5), UINT64_C(0x93a06aa4110d16a5),
+    };
     const unsigned row = (wrapped_y >> 4) & 31;
     if (!s_bg2_plane)
         s_bg2_plane = KnownBackground() ? 1 : 2;
+    const unsigned bg3_ts = g_ram[0x138] | ((unsigned)g_ram[0x139] << 8);
     if (!s_bg3_rows[row]) {
         const uint16_t *vram = g_ppu->renderVram ? g_ppu->renderVram : g_ppu->vram;
         uint64_t hash = UINT64_C(14695981039346656037);
@@ -191,12 +210,13 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
             hash = (hash ^ (value & 255)) * UINT64_C(1099511628211);
             hash = (hash ^ (value >> 8)) * UINT64_C(1099511628211);
         }
-        const unsigned bg3_ts = g_ram[0x138] | ((unsigned)g_ram[0x139] << 8);
         uint64_t expected = 0;
         if (bg3_ts == 9)
             expected = row < 24 ? UINT64_C(0x8fd4ca6a34b4e865) : lower_rows[row - 24];
         else if (bg3_ts == 10)
             expected = s_bg3_cloud_rows[row];
+        else if (bg3_ts == 15)
+            expected = s_bg3_sunset_rows[row];
         s_bg3_rows[row] = s_bg2_plane == 1 && PPU_mode(g_ppu) == 1 &&
             PPU_bigTiles(g_ppu, 2) && g_ppu->bgXsc[2] == 0x34 &&
             PPU_bgTileAdr(g_ppu, 2) == 0x2000 && expected && hash == expected ? 1 : 2;
@@ -205,7 +225,8 @@ uint16_t YoshiBg3MarginTile(uint16_t real_tile, uint32_t wrapped_y) {
      * (CODE_01DF45); their modified rows must never wrap into margins. */
     WsShadowSetWorld(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
     WsShadowSetScroll(2, g_ppu->hScroll[2], g_ppu->vScroll[2]);
-    return s_bg3_rows[row] == 1 ? real_tile : 0x0185;
+    const uint16_t fallback = bg3_ts == 15 ? 0x01db : 0x0185;
+    return s_bg3_rows[row] == 1 ? real_tile : fallback;
 }
 
 /* Recover only the wrap epoch from WRAM. Fine phase comes from the PPU
