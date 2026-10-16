@@ -146,7 +146,8 @@ static bool KnownBackground(void) {
             bool is_4_7 = (g_ram[0x21a] == 42 && g_ram[0x146] == 0);
             bool is_5_1 = (g_ram[0x21a] == 48 && g_ram[0x146] == 8);
             bool is_5_3 = (g_ram[0x21a] == 50 && g_ram[0x146] == 0);
-            if (!is_2_1 && !is_2_7 && !is_4_3 && !is_4_7 && !is_5_1 && !is_5_3) return false;
+            bool is_6_6 = (g_ram[0x21a] == 65 && g_ram[0x146] == 0);
+            if (!is_2_1 && !is_2_7 && !is_4_3 && !is_4_7 && !is_5_1 && !is_5_3 && !is_6_6) return false;
         } else if (header == 21) {
             /* Individually qualified Level 2-2 (The Baseball Boys), Extra 2, and Level 4-1 (GO! GO! MARIO!!). */
             if (g_ram[0x218] || g_ram[0x219] || g_ram[0x21b] || g_ram[0x147]) return false;
