@@ -98,110 +98,127 @@ def draw_snowflakes(draw: ImageDraw.ImageDraw, w: int, h: int):
         draw.rectangle([sx + 1, sy - 1, sx + 2, sy + 3], fill=(230, 240, 255, 120))
 
 def generate_pillar_mosaic(native_img: Image.Image, target_w: int, target_h: int, scene_type: str) -> Image.Image:
-    """Generate authentic 16-bit nearest-neighbor mosaic backdrop for Type B/C/D scenes."""
-    bg_32x28 = Image.new('RGB', (32, 28))
+    """Generate authentic 6-8 px SNES nearest-neighbor mosaic backdrop (64x28) sampled strictly
+    from active seam columns (x=0..7 on left, x=248..255 on right) with peripheral vignette."""
+    bg_64x28 = Image.new('RGB', (64, 28))
     native_rgb = native_img.convert('RGB')
     nw, nh = native_rgb.size
 
     for by in range(28):
         sample_y = int((by / 28.0) * nh)
         sample_y = max(8, min(nh - 8, sample_y))
-        for bx in range(32):
-            if scene_type == 'boss':
-                # Strictly sample outer fortress walls: x=0..31 on left, x=nw-32..nw-1 on right
-                sample_x = (bx % 4) * 8 if bx < 16 else (nw - 32 + ((bx - 16) % 4) * 8)
-                dist = abs(bx - 15.5) / 16.0
-                vignette = max(0.40, 0.95 - 0.45 * (dist * dist))
-            elif scene_type == 'map':
-                # Parchment / ocean vertical tone
+        for bx in range(64):
+            if bx < 32:
+                sample_x = (bx % 4) * 2
+            else:
+                sample_x = max(0, min(nw - 1, (nw - 8) + ((bx - 32) % 4) * 2))
+
+            dist_from_center = abs(bx - 31.5) / 32.0
+            vignette = max(0.45, 0.96 - 0.38 * (dist_from_center * dist_from_center))
+
+            if scene_type == 'map':
                 t = by / 27.0
                 top_col = (235, 220, 190)
                 bot_col = (70, 120, 180)
                 col = [int(top_col[i] * (1.0 - t) + bot_col[i] * t) for i in range(3)]
                 wave = ((bx * 7 + by * 13) % 11) - 5
-                vignette = 1.0 - 0.22 * (abs(bx - 15.5) / 16.0)
                 r = max(0, min(255, int((col[0] + wave) * vignette)))
                 g = max(0, min(255, int((col[1] + wave) * vignette)))
                 b = max(0, min(255, int((col[2] + wave) * vignette)))
-                bg_32x28.putpixel((bx, by), (r, g, b))
+                bg_64x28.putpixel((bx, by), (r, g, b))
                 continue
-            else:  # storybook
-                sample_x = (bx % 32) * (nw // 32)
-                sample_y = int(24 + (by / 28.0) * 110)
-                vignette = 0.88
 
             r, g, b = native_rgb.getpixel((sample_x, sample_y))
-            r = int(r * vignette * 0.85)
-            g = int(g * vignette * 0.85)
-            b = int(b * vignette * 0.85)
-            bg_32x28.putpixel((bx, by), (r, g, b))
+            r = int(r * vignette)
+            g = int(g * vignette)
+            b = int(b * vignette)
+            bg_64x28.putpixel((bx, by), (r, g, b))
 
-    # Scale with NEAREST NEIGHBOR to preserve crisp 16-bit mosaic blocks (no smooth blur)
-    mosaic = bg_32x28.resize((target_w, target_h), Image.Resampling.NEAREST)
+    # Scale with NEAREST NEIGHBOR to preserve crisp 6-8 px SNES mosaic blocks
+    mosaic = bg_64x28.resize((target_w, target_h), Image.Resampling.NEAREST)
     return mosaic
 
-def compose_boss_beta3(native_crop: Image.Image, target_w: int = 370) -> Image.Image:
-    """Compose Burt the Bashful with 16-bit stone brick mosaic pillars."""
+def compose_pillar_scene_beta3(native_crop: Image.Image, target_w: int = 370, scene_type: str = 'default',
+                               pause_button: bool = False) -> Image.Image:
+    """Compose centered native 256x208 inside widescreen frame with 6-8 px seam mosaic pillars."""
     target_h = ACTIVE_H  # 208
-    backdrop = generate_pillar_mosaic(native_crop, target_w, target_h, 'boss')
-    # Center native 256x208 directly in middle
+    backdrop = generate_pillar_mosaic(native_crop, target_w, target_h, scene_type)
     x_offset = (target_w - 256) // 2
     canvas = backdrop.copy()
     canvas.paste(native_crop, (x_offset, 0))
-    return canvas
 
-def compose_storybook_beta3(native_crop: Image.Image, target_w: int = 370) -> Image.Image:
-    """Compose Storybook with warm illustrated 16-bit border extension."""
-    target_h = ACTIVE_H
-    backdrop = generate_pillar_mosaic(native_crop, target_w, target_h, 'storybook')
-    x_offset = (target_w - 256) // 2
-    canvas = backdrop.copy()
-    for y in range(native_crop.height):
-        for x in range(native_crop.width):
-            p = native_crop.getpixel((x, y))
-            if sum(p[:3]) > 30:
-                canvas.putpixel((x_offset + x, y), p[:3])
-    return canvas
+    if pause_button:
+        # Faded pause button in top-right safe area (radius ~8 px in 370x208, alpha ~50)
+        overlay = Image.new('RGBA', canvas.size, (0, 0, 0, 0))
+        draw = ImageDraw.Draw(overlay)
+        px_cx = target_w - 18
+        px_cy = 14
+        r = 7
+        draw.ellipse([px_cx - r, px_cy - r, px_cx + r, px_cy + r], fill=(0, 0, 0, 48), outline=(255, 255, 255, 75))
+        draw.rectangle([px_cx - 3, px_cy - 4, px_cx - 1, px_cy + 4], fill=(255, 255, 255, 90))
+        draw.rectangle([px_cx + 1, px_cy - 4, px_cx + 3, px_cy + 4], fill=(255, 255, 255, 90))
+        canvas = Image.alpha_composite(canvas.convert('RGBA'), overlay).convert('RGB')
 
-def compose_map_beta3(native_crop: Image.Image, target_w: int = 370) -> Image.Image:
-    """Compose World Map with ocean parchment 16-bit mosaic extension."""
-    target_h = ACTIVE_H
-    backdrop = generate_pillar_mosaic(native_crop, target_w, target_h, 'map')
-    x_offset = (target_w - 256) // 2
-    canvas = backdrop.copy()
-    canvas.paste(native_crop, (x_offset, 0))
     return canvas
 
 def main():
     print("=== Generating Yoshi's Island Widescreen Beta 3 Definitive Comparisons ===")
     
-    # 1. Prólogo / Introducción
-    print("1. Intro / Storybook...")
-    intro_src = Image.open(ROOT / 'local/profiled-scenes/intro1200.fb.bmp')
+    # 1. Prólogo / Introducción (R1: Purple Yoshi among leaves)
+    print("1. Intro / Storybook (R1)...")
+    intro_path = ROOT / 'local/recomp_dumps/tutorial_candidate.fb.bmp'
+    if not intro_path.exists():
+        intro_path = ROOT / 'local/profiled-scenes/intro1200.fb.bmp'
+    intro_src = Image.open(intro_path)
     intro_base = crop_active(intro_src)
-    intro_beta3 = compose_storybook_beta3(intro_base, 370)
+    intro_beta3 = compose_pillar_scene_beta3(intro_base, 370, 'storybook')
     intro_base.save(OUT_DIR / '01_intro_storybook_base.png')
     intro_beta3.save(OUT_DIR / '01_intro_storybook_beta3.png')
 
-    # 2. Mapa Mundial de la Isla Yoshi
-    print("2. World Map...")
-    map_src = Image.open(ROOT / 'local/level-plane-proof/before_move.fb.bmp')
-    map_base = crop_active(map_src)
-    map_beta3 = compose_map_beta3(map_base, 370)
-    map_base.save(OUT_DIR / '02_world_map_base.png')
-    map_beta3.save(OUT_DIR / '02_world_map_beta3.png')
+    # 2. Selección de Partida / FICHEROS (R2 / R3)
+    print("2. File Select (R2 / R3: Faded pause button, 6-8px seam mosaic, CUÁL accent)...")
+    fs_path = ROOT / 'local/recomp_dumps/after_start.fb.bmp'
+    if not fs_path.exists():
+        fs_path = ROOT / 'local/profiled-scenes/after_start.fb.bmp'
+    fs_src = Image.open(fs_path)
+    fs_base = crop_active(fs_src)
+    fs_beta3 = compose_pillar_scene_beta3(fs_base, 370, 'default', pause_button=True)
+    fs_base.save(OUT_DIR / '02_file_select_base.png')
+    fs_beta3.save(OUT_DIR / '02_file_select_beta3.png')
 
-    # 3. Praderas 1-1 (4:3 vs Widescreen 16:9)
-    print("3. World 1-1 Grasslands...")
+    # 3. Pantalla de Título
+    print("3. Title Screen...")
+    title_path = ROOT / 'local/recomp_dumps/intro1200.fb.bmp'
+    if not title_path.exists():
+        title_path = ROOT / 'local/profiled-scenes/intro1200.fb.bmp'
+    title_src = Image.open(title_path)
+    title_base = crop_active(title_src)
+    title_beta3 = compose_pillar_scene_beta3(title_base, 370, 'default')
+    title_base.save(OUT_DIR / '03_title_screen_base.png')
+    title_beta3.save(OUT_DIR / '03_title_screen_beta3.png')
+
+    # 4. Mapa Mundial de la Isla Yoshi
+    print("4. World Map...")
+    map_path = ROOT / 'local/recomp_dumps/before_move.fb.bmp'
+    if not map_path.exists():
+        map_path = ROOT / 'local/level-plane-proof/before_move.fb.bmp'
+    map_src = Image.open(map_path)
+    map_base = crop_active(map_src)
+    map_beta3 = compose_pillar_scene_beta3(map_base, 370, 'map')
+    map_base.save(OUT_DIR / '04_world_map_base.png')
+    map_beta3.save(OUT_DIR / '04_world_map_beta3.png')
+
+    # 5. Praderas 1-1 (4:3 vs Widescreen 16:9)
+    print("5. World 1-1 Grasslands...")
     h11_src = Image.open(ROOT / 'docs/captures/fullscreen_420x224_after_move.png')
     h11_crop = crop_active(h11_src)
     h11_base = h11_crop.crop((82, 0, 82 + 256, ACTIVE_H))
     h11_beta3 = h11_crop.crop((25, 0, 25 + 370, ACTIVE_H))
-    h11_base.save(OUT_DIR / '03_grasslands_1_1_base.png')
-    h11_beta3.save(OUT_DIR / '03_grasslands_1_1_beta3.png')
+    h11_base.save(OUT_DIR / '05_grasslands_1_1_base.png')
+    h11_beta3.save(OUT_DIR / '05_grasslands_1_1_beta3.png')
 
-    # 4. Gameplay de Acción 1-2 (Raw pixels vs 2D-HD Island Cinema)
-    print("4. Level 1-2 Action Gameplay (Hills, Yoshi running, dust particles, contact shadow)...")
+    # 6. Gameplay de Acción 1-2 (Raw pixels vs 2D-HD Island Cinema)
+    print("6. Level 1-2 Action Gameplay (Hills, Yoshi running, dust particles, contact shadow)...")
     a12_src = Image.open(ROOT / 'docs/captures/level1_2_action_wide_fixed.png')
     a12_crop = crop_active(a12_src)
     a12_base = a12_crop.crop((43, 0, 43 + 256, ACTIVE_H))
@@ -212,45 +229,42 @@ def main():
     # Overlay contact shadow under Yoshi and Shy-Guys + running dust
     overlay = Image.new('RGBA', a12_lit.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
-    # Yoshi running at x~170, y~165
     draw_contact_shadow(draw, 172, 172, 11, 4)
-    # Running dust puff behind Yoshi
     draw_dust_particles(draw, 160, 168, count=4)
-    # Shy-Guys at x~85 and x~265
     draw_contact_shadow(draw, 85, 172, 8, 3)
     draw_contact_shadow(draw, 265, 172, 8, 3)
     
     a12_beta3 = Image.alpha_composite(a12_lit.convert('RGBA'), overlay).convert('RGB')
-    a12_base.save(OUT_DIR / '04_gameplay_action_1_2_base.png')
-    a12_beta3.save(OUT_DIR / '04_gameplay_action_1_2_beta3.png')
+    a12_base.save(OUT_DIR / '06_gameplay_action_1_2_base.png')
+    a12_beta3.save(OUT_DIR / '06_gameplay_action_1_2_beta3.png')
 
-    # 5. Caverna Subterránea 1-2 con Chomp Rock
-    print("5. Level 1-2 Underground Cave...")
+    # 7. Caverna Subterránea 1-2 con Chomp Rock
+    print("7. Level 1-2 Underground Cave...")
     c12_src = Image.open(ROOT / 'docs/captures/level1_2_chomp_wide_fixed.png')
     c12_crop = crop_active(c12_src)
     c12_base = c12_crop.crop((43, 0, 43 + 256, ACTIVE_H))
-    # Cave cool lighting + contact shadow under Chomp Rock
     c12_lit = apply_lighting(c12_crop, (228, 232, 246))
     c_overlay = Image.new('RGBA', c12_lit.size, (0, 0, 0, 0))
     c_draw = ImageDraw.Draw(c_overlay)
-    # Chomp rock at x~210, y~155
     draw_contact_shadow(c_draw, 212, 168, 18, 5)
-    # Yoshi at x~145, y~165
     draw_contact_shadow(c_draw, 145, 172, 11, 4)
     c12_beta3 = Image.alpha_composite(c12_lit.convert('RGBA'), c_overlay).convert('RGB')
-    c12_base.save(OUT_DIR / '05_cave_underground_1_2_base.png')
-    c12_beta3.save(OUT_DIR / '05_cave_underground_1_2_beta3.png')
+    c12_base.save(OUT_DIR / '07_cave_underground_1_2_base.png')
+    c12_beta3.save(OUT_DIR / '07_cave_underground_1_2_beta3.png')
 
-    # 6. Mazmorra y Jefe Burt the Bashful (Mundo 1-4)
-    print("6. Boss 1-4 Burt the Bashful (Type B 4:3 arena + 16-bit brick mosaic pillars)...")
-    burt_src = Image.open(ROOT / 'local/castle-boss-wide/boss_battle.fb.bmp')
+    # 8. Mazmorra y Jefe Burt the Bashful (Mundo 1-4)
+    print("8. Boss 1-4 Burt the Bashful (Type B 4:3 arena + 16-bit brick mosaic pillars)...")
+    burt_path = ROOT / 'local/recomp_dumps/castle01.fb.bmp'
+    if not burt_path.exists():
+        burt_path = ROOT / 'local/castle-boss-wide/boss_battle.fb.bmp'
+    burt_src = Image.open(burt_path)
     burt_base = crop_active(burt_src)
-    burt_beta3 = compose_boss_beta3(burt_base, 370)
-    burt_base.save(OUT_DIR / '06_boss_burt_1_4_base.png')
-    burt_beta3.save(OUT_DIR / '06_boss_burt_1_4_beta3.png')
+    burt_beta3 = compose_pillar_scene_beta3(burt_base, 370, 'boss')
+    burt_base.save(OUT_DIR / '08_boss_burt_1_4_base.png')
+    burt_beta3.save(OUT_DIR / '08_boss_burt_1_4_beta3.png')
 
-    # 7. Selva Tropical 3-1
-    print("7. Jungle Tropics 3-1...")
+    # 9. Selva Tropical 3-1
+    print("9. Jungle Tropics 3-1...")
     j31_src = Image.open(ROOT / 'docs/captures/level3_1_fixed_wide.png')
     j31_crop = crop_active(j31_src)
     j31_base = j31_crop.crop((43, 0, 43 + 256, ACTIVE_H))
@@ -259,11 +273,11 @@ def main():
     j_draw = ImageDraw.Draw(j_overlay)
     draw_contact_shadow(j_draw, 170, 165, 11, 4)
     j31_beta3 = Image.alpha_composite(j31_lit.convert('RGBA'), j_overlay).convert('RGB')
-    j31_base.save(OUT_DIR / '07_jungle_tropics_3_1_base.png')
-    j31_beta3.save(OUT_DIR / '07_jungle_tropics_3_1_beta3.png')
+    j31_base.save(OUT_DIR / '09_jungle_tropics_3_1_base.png')
+    j31_beta3.save(OUT_DIR / '09_jungle_tropics_3_1_beta3.png')
 
-    # 8. Entorno Acuático 3-7
-    print("8. Water Lake 3-7 (Ripples and splashes)...")
+    # 10. Entorno Acuático 3-7
+    print("10. Water Lake 3-7 (Ripples and splashes)...")
     w37_src = Image.open(ROOT / 'docs/captures/level3_7_wide_9380.png')
     w37_crop = crop_active(w37_src)
     w37_base = w37_crop.crop((43, 0, 43 + 256, ACTIVE_H))
@@ -272,11 +286,11 @@ def main():
     w_draw = ImageDraw.Draw(w_overlay)
     draw_water_ripples(w_draw, 165, 175)
     w37_beta3 = Image.alpha_composite(w37_lit.convert('RGBA'), w_overlay).convert('RGB')
-    w37_base.save(OUT_DIR / '08_water_lake_3_7_base.png')
-    w37_beta3.save(OUT_DIR / '08_water_lake_3_7_beta3.png')
+    w37_base.save(OUT_DIR / '10_water_lake_3_7_base.png')
+    w37_beta3.save(OUT_DIR / '10_water_lake_3_7_beta3.png')
 
-    # 9. Cumbre Nevada 5-1
-    print("9. Snow Summit 5-1 (Alpine contrast + falling snowflakes)...")
+    # 11. Cumbre Nevada 5-1
+    print("11. Snow Summit 5-1 (Alpine contrast + falling snowflakes)...")
     s51_src = Image.open(ROOT / 'docs/captures/level5_1_wide_9380.png')
     s51_crop = crop_active(s51_src)
     s51_base = s51_crop.crop((43, 0, 43 + 256, ACTIVE_H))
@@ -286,11 +300,11 @@ def main():
     draw_snowflakes(s_draw, s51_lit.width, s51_lit.height)
     draw_contact_shadow(s_draw, 170, 168, 11, 4)
     s51_beta3 = Image.alpha_composite(s51_lit.convert('RGBA'), s_overlay).convert('RGB')
-    s51_base.save(OUT_DIR / '09_snow_summit_5_1_base.png')
-    s51_beta3.save(OUT_DIR / '09_snow_summit_5_1_beta3.png')
+    s51_base.save(OUT_DIR / '11_snow_summit_5_1_base.png')
+    s51_beta3.save(OUT_DIR / '11_snow_summit_5_1_beta3.png')
 
-    # 10. Castillo de Bowser y Lava 6-8
-    print("10. Bowser Castle & Lava 6-8 (Fiery ambient + lava bloom + floating embers)...")
+    # 12. Castillo de Bowser y Lava 6-8
+    print("12. Bowser Castle & Lava 6-8 (Fiery ambient + lava bloom + floating embers)...")
     l68_src = Image.open(ROOT / 'docs/captures/level6_8_wide_9340.png')
     l68_crop = crop_active(l68_src)
     l68_base = l68_crop.crop((43, 0, 43 + 256, ACTIVE_H))
@@ -300,10 +314,10 @@ def main():
     l_draw = ImageDraw.Draw(l_overlay)
     draw_embers(l_draw, l68_lit.width, l68_lit.height)
     l68_beta3 = Image.alpha_composite(l68_lit.convert('RGBA'), l_overlay).convert('RGB')
-    l68_base.save(OUT_DIR / '10_castle_lava_6_8_base.png')
-    l68_beta3.save(OUT_DIR / '10_castle_lava_6_8_beta3.png')
+    l68_base.save(OUT_DIR / '12_castle_lava_6_8_base.png')
+    l68_beta3.save(OUT_DIR / '12_castle_lava_6_8_beta3.png')
 
-    print(f"\nSuccessfully generated 10 synchronized comparison pairs in {OUT_DIR}!")
+    print(f"\nSuccessfully generated 12 synchronized comparison pairs in {OUT_DIR}!")
 
 if __name__ == '__main__':
     main()

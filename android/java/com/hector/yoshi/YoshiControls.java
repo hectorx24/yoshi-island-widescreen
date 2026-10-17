@@ -38,6 +38,10 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
     private final Set<Integer> held = new HashSet<Integer>();
     private boolean visible;
     private int mode; // 0 = Auto, 1 = Show, 2 = Hide
+    private long lastTouchTime = System.currentTimeMillis();
+    private final Runnable fadeRunnable = new Runnable() {
+        @Override public void run() { invalidate(); }
+    };
 
     YoshiControls(Context context) {
         super(context);
@@ -164,16 +168,16 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
         l.btnR_y = pt + safeY + 22f * s;
 
         // Middle buttons (Select / Start)
-        l.middleRadius = 18f * s;
+        l.middleRadius = 16f * s;
         float midX = pl + (w - pl - pr) / 2f;
-        l.btnSel_x = midX - 44f * s;
+        l.btnSel_x = midX - 38f * s;
         l.btnSel_y = h - pb - safeY - 16f * s;
-        l.btnStart_x = midX + 44f * s;
+        l.btnStart_x = midX + 38f * s;
         l.btnStart_y = h - pb - safeY - 16f * s;
 
-        // Top-center pause menu button (discreet emblem, no collision with R shoulder)
-        l.menuRadius = 18f * s;
-        l.menuX = midX;
+        // Pause menu button: placed fully inside safe area in top-right, away from titles
+        l.menuRadius = 13f * s;
+        l.menuX = w - pr - safeX - 78f * s;
         l.menuY = pt + safeY + 16f * s;
 
         return l;
@@ -454,6 +458,10 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
             return true;
         }
 
+        lastTouchTime = System.currentTimeMillis();
+        removeCallbacks(fadeRunnable);
+        postDelayed(fadeRunnable, 3050);
+
         Set<Integer> next = new HashSet<Integer>();
         int action = event.getActionMasked(), up = event.getActionIndex();
         if (action != MotionEvent.ACTION_CANCEL && action != MotionEvent.ACTION_UP) {
@@ -503,29 +511,70 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
         canvas.drawText(label, x, y - (paint.ascent() + paint.descent())/2, paint);
     }
 
+    private void drawArrow(Canvas canvas, float cx, float cy, float r, int dir, int key) {
+        paint.setColor(held.contains(key) ? 0x884a8cbb : 0x44202c38);
+        paint.setStyle(Paint.Style.FILL);
+        canvas.drawCircle(cx, cy, r, paint);
+        paint.setColor(0x99ffffff);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(scale());
+        canvas.drawCircle(cx, cy, r, paint);
+
+        float s = scale();
+        float d = 6.0f * s;
+        android.graphics.Path path = new android.graphics.Path();
+        if (dir == 0) { // LEFT
+            path.moveTo(cx - d, cy);
+            path.lineTo(cx + d * 0.6f, cy - d * 0.75f);
+            path.lineTo(cx + d * 0.6f, cy + d * 0.75f);
+        } else if (dir == 1) { // RIGHT
+            path.moveTo(cx + d, cy);
+            path.lineTo(cx - d * 0.6f, cy - d * 0.75f);
+            path.lineTo(cx - d * 0.6f, cy + d * 0.75f);
+        } else if (dir == 2) { // UP
+            path.moveTo(cx, cy - d);
+            path.lineTo(cx - d * 0.75f, cy + d * 0.6f);
+            path.lineTo(cx + d * 0.75f, cy + d * 0.6f);
+        } else { // DOWN
+            path.moveTo(cx, cy + d);
+            path.lineTo(cx - d * 0.75f, cy - d * 0.6f);
+            path.lineTo(cx + d * 0.75f, cy - d * 0.6f);
+        }
+        path.close();
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(0xD0ffffff);
+        canvas.drawPath(path, paint);
+    }
+
     private void drawMenuButton(Canvas canvas, ControlLayout l, float s) {
         float bx = l.menuX;
         float by = l.menuY;
         float radius = l.menuRadius;
 
-        // Soft green disc
+        long idle = System.currentTimeMillis() - lastTouchTime;
+        float factor = (idle > 3000) ? Math.max(0.20f, 1.0f - (idle - 3000) / 1000f) : 1.0f;
+        int discA = (int)(0x50 * factor);
+        int strokeA = (int)(0x80 * factor);
+        int barA = (int)(0xC0 * factor);
+
+        // Discreet semi-transparent green disc
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(0xD02F5B22);
+        paint.setColor((discA << 24) | 0x2F5B22);
         canvas.drawCircle(bx, by, radius, paint);
 
-        // Cream outline
+        // Subtle outline
         paint.setStyle(Paint.Style.STROKE);
-        paint.setColor(0xE6F8F3DC);
-        paint.setStrokeWidth(1.6f * s);
+        paint.setColor((strokeA << 24) | 0xF8F3DC);
+        paint.setStrokeWidth(1.3f * s);
         canvas.drawCircle(bx, by, radius, paint);
 
         // Pause symbol (two rounded vertical bars ❚❚)
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(0xFFFDFCF8);
-        float barW = 3.2f * s;
-        float barH = 12.0f * s;
-        float gap = 3.2f * s;
-        float rad = 1.2f * s;
+        paint.setColor((barA << 24) | 0xFDFCF8);
+        float barW = 2.4f * s;
+        float barH = 9.0f * s;
+        float gap = 2.6f * s;
+        float rad = 1.0f * s;
         canvas.drawRoundRect(bx - gap/2 - barW, by - barH/2, bx - gap/2, by + barH/2, rad, rad, paint);
         canvas.drawRoundRect(bx + gap/2, by - barH/2, bx + gap/2 + barW, by + barH/2, rad, rad, paint);
     }
@@ -548,11 +597,11 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
             circle(canvas, l.btnL_x, l.btnL_y, l.shoulderRadius, "L", KeyEvent.KEYCODE_C);
             circle(canvas, l.btnR_x, l.btnR_y, l.shoulderRadius, "R", KeyEvent.KEYCODE_V);
 
-            // D-Pad arrows
-            circle(canvas, l.dpadCx - 34f * s, l.dpadCy, l.dpadRadius, "<", KeyEvent.KEYCODE_DPAD_LEFT);
-            circle(canvas, l.dpadCx + 34f * s, l.dpadCy, l.dpadRadius, ">", KeyEvent.KEYCODE_DPAD_RIGHT);
-            circle(canvas, l.dpadCx, l.dpadCy - 34f * s, l.dpadRadius, "^", KeyEvent.KEYCODE_DPAD_UP);
-            circle(canvas, l.dpadCx, l.dpadCy + 34f * s, l.dpadRadius, "v", KeyEvent.KEYCODE_DPAD_DOWN);
+            // D-Pad arrows with geometric vectors
+            drawArrow(canvas, l.dpadCx - 34f * s, l.dpadCy, l.dpadRadius, 0, KeyEvent.KEYCODE_DPAD_LEFT);
+            drawArrow(canvas, l.dpadCx + 34f * s, l.dpadCy, l.dpadRadius, 1, KeyEvent.KEYCODE_DPAD_RIGHT);
+            drawArrow(canvas, l.dpadCx, l.dpadCy - 34f * s, l.dpadRadius, 2, KeyEvent.KEYCODE_DPAD_UP);
+            drawArrow(canvas, l.dpadCx, l.dpadCy + 34f * s, l.dpadRadius, 3, KeyEvent.KEYCODE_DPAD_DOWN);
         }
         drawMenuButton(canvas, l, s);
     }

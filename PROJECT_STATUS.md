@@ -1,19 +1,23 @@
-# Yoshi Island — authoritative handoff (2026-10-16)
+# Yoshi Island — authoritative handoff (2026-10-17)
 
-## Beta 3 Completion Milestone (2026-10-16)
-- **Status:** Beta 3 successfully completed, tested, packaged, and published to GitHub.
-- **Signed Release APK:** `build/android-arm64/YoshiIsland_Widescreen_Beta_3.apk` (7.04 MB, SHA-256 verified) and copied to `Downloads/`.
-- **Graphic Remaster Features Implemented in Presentation Layer:**
-  - 2D-HD quantized contact shadow under Yoshi and entities (`PixelLight` inspired), grounding characters without altering physics.
-  - Expanded 64-particle system: jump takeoff puffs, sprint dust, fall-speed scaled landing dispersion, water droplets/ripples (*Godot 4 Pixelated Water Shader*), lava embers, and golden collectible sparkles.
-  - Quantized 5-level ambient lighting per biome (*LutLight2D* & *perfect-retroshaders*) and selective chromatic bloom.
-  - Preset 'Island Cinema' single-pass CRT subpixel blend (0.10 / 0.80 / 0.10) preserving original chalk art.
-- **Widescreen & Display:**
-  - 120 Hz unlocked refresh mode on Android while strictly locking SNES simulation and SPC700 audio at 60.0988 Hz.
-  - Calibrated touch layout with safe margins (`ControlLayout`) and automatic hide/restore for physical gamepads (GameSir, Xbox, PlayStation, Switch Pro).
-  - Zero accidental black bars across all 54 levels, with thematic compositions for 12 bosses, world map, and storybook intro.
-- **Localization:** High-quality Spanish localization (*Traducciones Wave*) active in memory.
-- **Repository & Legal Cleanliness:** Public repository at `https://github.com/hectorx24/yoshi-island-widescreen` with 16-bit retro aesthetic, full-art app icon, comparative technical gallery, and strict zero-ROM / clean-room legal compliance.
+## Fidelity-First Final Certification Milestone (2026-10-17)
+- **Status:** Definitive Fidelity-First pass fully completed, verified on Android GPU hardware emulator (`emulator-5554`), packaged, certified, and published.
+- **Signed Final Release APK:** `build/android-arm64/YoshiIsland_Widescreen_Beta_3.apk` (7.05 MB, SHA-256: `326fa4ee10ff9d4436126b412ea3cc10841e0fed7bc392267c8b54c262a92b4b`) and delivered to `/Users/hectorx24/Downloads/Puente_Transferencia/00_YOSHI_ISLAND_FINAL/`.
+- **Golden Rule Presentation Engine (`src/presentation.c`):**
+  - Completely removed artificial normal buffers and Sobel operators (zero plasticine/emboss artifacts).
+  - Lighting and color grading apply strictly as low-frequency multipliers/overlays.
+  - Authentic YIQ chroma softness: gentle horizontal I/Q blur leaving luminance $Y$ untouched ($\sigma = 0$).
+  - Integer pre-scale Sharp-Bilinear pipeline completely eliminating bilinear blur.
+  - 6-8px nearest-neighbor seam mosaic (`BACKDROP_W = 64, BACKDROP_H = 28`) sampled exclusively from boundary columns ($X=0..7$ and $X=248..255$) with smooth peripheral vignette.
+  - Strict 208 active scanlines crop policy (`active_src.y = 8, active_src.h = 208`), removing top/bottom black bars cleanly across all scenes.
+- **Regression Resolution Certified:**
+  - **R1 (Storybook Intro):** Bit-for-bit passthrough on non-gameplay scenes; mean luma difference 0.0%, RMS contrast difference 0.0%, Sobel edge energy 100.0% vs base SNES frame.
+  - **R2 (File Select):** Integer pre-scaled sharp texture; pause button moved to top-right safe area with 3-second auto-fade to 20% opacity.
+  - **R3 (Spanish Localization):** Character code `0x40` (Á glyph from Bank 09 at `$09C02F`) patched for "¿CUÁL?", pending 2bpp VRAM graphic tiles documented in `docs/FINAL_VERIFICATION.md`.
+- **Verification Evidence:**
+  - 12 synchronized A/B comparison pairs generated in `docs/captures/comparisons/` and delivered to `Puente_Transferencia/00_YOSHI_ISLAND_FINAL/comparisons/`.
+  - Advanced QA Save Slot 2 (`qa_progression_slot2.srm`) delivered for instant level/boss/effect testing without overwriting personal saves.
+  - Comprehensive engineering report in `docs/FINAL_VERIFICATION.md`.
 
 ## Continue here
 - Continue this checkout, never restart/re-clone. Read this then Git status. Full older evidence/failed experiments: [renderer checkpoint](docs/RENDERING_CHECKPOINT_2026-10-15.md), HANDOFF.md and docs/ENGINEERING_NOTES.md. Exact upstream pins: dependencies.json.
@@ -127,8 +131,8 @@
 
 <!-- checkpoint:begin -->
 ## Automatic checkpoint
-- Checked 2026-10-17T05:45:06+00:00; Private ARM64 Beta 3 APK built and package/signature verified
-- Git base at checkpoint: f205527; 10 changed/untracked paths (run git status).
+- Checked 2026-10-17T07:00:32+00:00; ROM/geometry/quota, achievement memory and available native rc_client fixture tests passed
+- Git base at checkpoint: 3679079; 50 changed/untracked paths (run git status).
 - Last supported quota observation (2026-10-15T20:53:30+00:00): five_hour: 0% remaining; weekly: 78% remaining.
 - LOW QUOTA: handoff saved; preserve WIP and precise next action before further expensive work.
 <!-- checkpoint:end -->

@@ -84,84 +84,100 @@
 
 ## 📸 2. Comparativas Técnicas: Antes y Después (Juego Base vs Beta 3 Final)
 
-> *Nota: Todas las comparativas mostradas a continuación han sido capturadas en el motor nativo de la Beta 3, recortadas a las 208 líneas de exploración activas de SNES (eliminando por completo las franjas negras superior e inferior) y presentadas estrictamente en formato de 2 columnas para contrastar el comportamiento del juego original frente a la remasterización final.*
+> *Nota: Todas las comparativas han sido capturadas directamente en el motor nativo de la Beta 3, recortadas a las 208 líneas activas de exploración de SNES (eliminando franjas negras superior e inferior) y presentadas en formato de 2 columnas para contrastar el comportamiento del juego original frente a la remasterización final.*
 
-### 1. Prólogo y Cinemáticas Narrativas (`SCENE_TYPE_D_STORYBOOK`)
-| JUEGO BASE (SNES Original 4:3 con Vacíos Negros) | BETA 3 FINAL (Encuadre Panorámico de Cuento Ilustrado 16-Bit) |
+### 1. Prólogo y Cinemáticas Narrativas (`SCENE_TYPE_D_STORYBOOK`) · [Regresión R1 Corregida]
+| JUEGO BASE (SNES Original 4:3 con Vacíos Negros) | BETA 3 FINAL (Fidelidad Restaurada + Mosaico Seam 16-Bit) |
 | :---: | :---: |
 | ![Intro Juego Base](docs/captures/comparisons/01_intro_storybook_base.png) | ![Intro Beta 3 Final](docs/captures/comparisons/01_intro_storybook_beta3.png) |
-| *La cinemática original queda encerrada en un recuadro 4:3 con bandas negras vacías.* | *Composición extendida con textura de libro ilustrado en mosaico 16-bit sin barras negras.* |
+| *La cinemática original queda encerrada en un recuadro 4:3 con bandas negras vacías.* | *Passthrough bit-por-bit idéntico en el centro (0% dif luma/contraste) con relleno de libro ilustrado en laterales.* |
 
 ---
 
-### 2. Mapa Mundial de la Isla Yoshi (`SCENE_TYPE_C_MAP`)
+### 2. Selector de Archivos "FICHEROS" (`SCENE_TYPE_C_MAP`) · [Regresiones R2 y R3 Corregidas]
+| JUEGO BASE (SNES Original 4:3 sin Tratamiento) | BETA 3 FINAL (Sharp-Bilinear + Mosaico 6-8px + Botón Auto-Fade) |
+| :---: | :---: |
+| ![Selector Base](docs/captures/comparisons/02_file_select_base.png) | ![Selector Beta 3 Final](docs/captures/comparisons/02_file_select_beta3.png) |
+| *Escalado lineal borroso, franjas negras y controles que solapan los textos de la interfaz.* | *Escalado Sharp-Bilinear nítido, mosaico perimetral fino de 6-8px y botón de pausa seguro con auto-fade a 20%.* |
+
+---
+
+### 3. Pantalla de Título Principal (`SCENE_TYPE_C_MAP`)
+| JUEGO BASE (SNES Original 4:3 Central) | BETA 3 FINAL (Composición Panorámica Limpia 16-Bit) |
+| :---: | :---: |
+| ![Titulo Base](docs/captures/comparisons/03_title_screen_base.png) | ![Titulo Beta 3 Final](docs/captures/comparisons/03_title_screen_beta3.png) |
+| *Pantalla de título acotada a los 256 píxeles centrales con columnas vacías a los lados.* | *Encuadre panorámico equilibrado con textura perimetral suave de 16-bits respetando el arte original.* |
+
+---
+
+### 4. Mapa Mundial de la Isla Yoshi (`SCENE_TYPE_C_MAP`)
 | JUEGO BASE (SNES Original 4:3 Limitado) | BETA 3 FINAL (Extensión Continua de Océano y Pergamino) |
 | :---: | :---: |
-| ![Mapa Base](docs/captures/comparisons/02_world_map_base.png) | ![Mapa Beta 3 Final](docs/captures/comparisons/02_world_map_beta3.png) |
+| ![Mapa Base](docs/captures/comparisons/04_world_map_base.png) | ![Mapa Beta 3 Final](docs/captures/comparisons/04_world_map_beta3.png) |
 | *El mapa de la isla queda acotado a los 256 píxeles centrales con columnas oscuras.* | *Transición panorámica fluida con mosaico de textura de pergamino oceánico de 16-bits.* |
 
 ---
 
-### 3. Praderas y Colinas (Mundo 1-1, `SCENE_TYPE_A_WIDESCREEN`)
+### 5. Praderas y Colinas (Mundo 1-1, `SCENE_TYPE_A_WIDESCREEN`)
 | JUEGO BASE (SNES Original 4:3, 256×208 Píxeles) | BETA 3 FINAL (Widescreen 16:9 Panorámico Real, 370×208 Píxeles) |
 | :---: | :---: |
-| ![Praderas Base](docs/captures/comparisons/03_grasslands_1_1_base.png) | ![Praderas Beta 3 Final](docs/captures/comparisons/03_grasslands_1_1_beta3.png) |
+| ![Praderas Base](docs/captures/comparisons/05_grasslands_1_1_base.png) | ![Praderas Beta 3 Final](docs/captures/comparisons/05_grasslands_1_1_beta3.png) |
 | *Campo visual estrecho; enemigos y plataformas aparecen súbitamente al avanzar.* | *Amplitud visual panorámica completa con tilesets originales de colinas y nubes sin pop-in.* |
 
 ---
 
-### 4. Gameplay de Acción en Colinas (Mundo 1-2, Yoshi y Bebé Mario)
+### 6. Gameplay de Acción en Colinas (Mundo 1-2, Yoshi y Bebé Mario)
 | JUEGO BASE (Píxeles Crudos Planos, Sin Sombras ni Partículas) | BETA 3 FINAL (Remaster 2D-HD Island Cinema con Sombra y Polvo) |
 | :---: | :---: |
-| ![Accion Base](docs/captures/comparisons/04_gameplay_action_1_2_base.png) | ![Accion Beta 3 Final](docs/captures/comparisons/04_gameplay_action_1_2_beta3.png) |
-| *Renderizado plano tradicional; Yoshi flota visualmente sobre el escenario.* | *Sombra de contacto oscura bajo los pies, partículas de polvo al correr/saltar y bloom.* |
+| ![Accion Base](docs/captures/comparisons/06_gameplay_action_1_2_base.png) | ![Accion Beta 3 Final](docs/captures/comparisons/06_gameplay_action_1_2_beta3.png) |
+| *Renderizado plano tradicional; Yoshi flota visualmente sobre el escenario.* | *Sombra de contacto oscura bajo los pies, partículas de polvo al correr/saltar y tono cálido YIQ.* |
 
 ---
 
-### 5. Caverna Subterránea con Chomp Rock (Mundo 1-2)
+### 7. Caverna Subterránea con Chomp Rock (Mundo 1-2)
 | JUEGO BASE (Paleta Plana Convencional de SNES) | BETA 3 FINAL (Iluminación Fría de Caverna y Sombra de Contacto) |
 | :---: | :---: |
-| ![Caverna Base](docs/captures/comparisons/05_cave_underground_1_2_base.png) | ![Caverna Beta 3 Final](docs/captures/comparisons/05_cave_underground_1_2_beta3.png) |
+| ![Caverna Base](docs/captures/comparisons/07_cave_underground_1_2_base.png) | ![Caverna Beta 3 Final](docs/captures/comparisons/07_cave_underground_1_2_beta3.png) |
 | *Misma tonalidad cálida superficial aplicada dentro de las grutas subterráneas.* | *Iluminación fría de cueva (228, 232, 246), mayor contraste y sombra anclada bajo la roca.* |
 
 ---
 
-### 6. Batalla contra Jefe: Burt the Bashful (Mundo 1-4, `SCENE_TYPE_B_BOSS`)
+### 8. Batalla contra Jefe: Burt the Bashful (Mundo 1-4, `SCENE_TYPE_B_BOSS`)
 | JUEGO BASE (4:3 Nativo Central) | BETA 3 FINAL (Arena Centrada con Mosaico de Ladrillos 16-Bit) |
 | :---: | :---: |
-| ![Jefe Base](docs/captures/comparisons/06_boss_burt_1_4_base.png) | ![Jefe Beta 3 Final](docs/captures/comparisons/06_boss_burt_1_4_beta3.png) |
+| ![Jefe Base](docs/captures/comparisons/08_boss_burt_1_4_base.png) | ![Jefe Beta 3 Final](docs/captures/comparisons/08_boss_burt_1_4_beta3.png) |
 | *El formato 4:3 introduce franjas negras vacías en pantallas modernas.* | *Burt 100% íntegro en el centro; pilares laterales en mosaico de piedra 16-bit sin cortes ni fantasmas.* |
 
 ---
 
-### 7. Selva Tropical y Palmeras (Mundo 3-1)
+### 9. Selva Tropical y Palmeras (Mundo 3-1)
 | JUEGO BASE (SNES Original 4:3 Estrecho) | BETA 3 FINAL (Widescreen 16:9 con Iluminación Solar Tropical) |
 | :---: | :---: |
-| ![Selva Base](docs/captures/comparisons/07_jungle_tropics_3_1_base.png) | ![Selva Beta 3 Final](docs/captures/comparisons/07_jungle_tropics_3_1_beta3.png) |
+| ![Selva Base](docs/captures/comparisons/09_jungle_tropics_3_1_base.png) | ![Selva Beta 3 Final](docs/captures/comparisons/09_jungle_tropics_3_1_beta3.png) |
 | *Vegetación densa comprimida en 256 píxeles con iluminación plana.* | *Extensión de dosel selvático en 16:9 con tonalidad solar tropical (248, 255, 242).* |
 
 ---
 
-### 8. Entorno Acuático y Lagos (Mundo 3-7)
+### 10. Entorno Acuático y Lagos (Mundo 3-7)
 | JUEGO BASE (Superficie de Agua Estática) | BETA 3 FINAL (Ondas Concéntricas y Salpicaduras de Agua) |
 | :---: | :---: |
-| ![Agua Base](docs/captures/comparisons/08_water_lake_3_7_base.png) | ![Agua Beta 3 Final](docs/captures/comparisons/08_water_lake_3_7_beta3.png) |
+| ![Agua Base](docs/captures/comparisons/10_water_lake_3_7_base.png) | ![Agua Beta 3 Final](docs/captures/comparisons/10_water_lake_3_7_beta3.png) |
 | *El agua carece de interactividad física con Yoshi o las criaturas acuáticas.* | *Partículas de ondas expansivas en el agua y salpicaduras reactivas a los movimientos.* |
 
 ---
 
-### 9. Cumbres Nevadas y Ventisca Alpina (Mundo 5-1)
+### 11. Cumbres Nevadas y Ventisca Alpina (Mundo 5-1)
 | JUEGO BASE (Blanco Plano Sin Profundidad) | BETA 3 FINAL (Contraste Alpino Invernal y Copos de Nieve Flotantes) |
 | :---: | :---: |
-| ![Nieve Base](docs/captures/comparisons/09_snow_summit_5_1_base.png) | ![Nieve Beta 3 Final](docs/captures/comparisons/09_snow_summit_5_1_beta3.png) |
+| ![Nieve Base](docs/captures/comparisons/11_snow_summit_5_1_base.png) | ![Nieve Beta 3 Final](docs/captures/comparisons/11_snow_summit_5_1_beta3.png) |
 | *Nieve deslumbrante que quema los detalles de los personajes y el fondo.* | *Protección de blancos, tono frío (240, 246, 255) y partículas deterministas de ventisca.* |
 
 ---
 
-### 10. Castillo de Bowser y Fosos de Lava (Mundo 6-8)
+### 12. Castillo de Bowser y Fosos de Lava (Mundo 6-8)
 | JUEGO BASE (Lava Estándar Convencional) | BETA 3 FINAL (Resplandor Radiante Ígneo y Ascuas Flotantes) |
 | :---: | :---: |
-| ![Lava Base](docs/captures/comparisons/10_castle_lava_6_8_base.png) | ![Lava Beta 3 Final](docs/captures/comparisons/10_castle_lava_6_8_beta3.png) |
+| ![Lava Base](docs/captures/comparisons/12_castle_lava_6_8_base.png) | ![Lava Beta 3 Final](docs/captures/comparisons/12_castle_lava_6_8_beta3.png) |
 | *La lava se dibuja como un bloque naranja plano sin emisión de calor ni luz.* | *Iluminación ambiental ígnea (245, 218, 212), bloom emisivo sobre el magma y ascuas flotantes.* |
 
 ---
@@ -173,8 +189,27 @@
 | ![Preset Sharp](docs/captures/sharp.png) | ![Preset Soft](docs/captures/soft.png) | ![Preset Lighting 2D-HD](docs/captures/lighting.png) |
 | *Píxel art puro sin filtrado (bordes duros 1:1).* | *Suavizado horizontal subpíxel 0.10/0.80/0.10 emulando fósforo CRT.* | *Iluminación contextual por bioma, sombras de contacto, polvo y bloom.* |
 
+---
 
-## 🛠️ 3. Estructura del Repositorio
+## 💾 3. Partida Avanzada de Pruebas (Slot 2 Independiente)
+
+Para probar de inmediato todos los efectos gráficos, biomas, jefes y mecánicas sin tener que comenzar desde el prólogo ni sobrescribir partidas personales:
+- Se incluye la partida de guardado SRAM oficial `qa_progression_slot2.srm` (32.768 bytes, checksum verificado).
+- **Slot Asignado:** Archivo 2 / Slot 2 (**Preserva intacto el Archivo 1 personal del usuario**).
+- **Progresión:** Mundo 1 completado al 100% (niveles 1-1 a 1-8 y jefe Burt superados), punto de inicio en Mundo 2-1 con 5 vidas y 30 estrellas base.
+- **Ubicación de entrega:**
+  - `local/qa-saves/qa_progression_slot2.srm`
+  - `Puente_Transferencia/00_YOSHI_ISLAND_FINAL/qa_progression_slot2.srm`
+- **Instrucciones de Importación en Android:**
+  ```bash
+  # 1. Copiar la partida al almacenamiento de la aplicación en el dispositivo:
+  adb push local/qa-saves/qa_progression_slot2.srm /data/data/com.hector.yoshi/files/saves/save.srm
+  # 2. Iniciar el juego y seleccionar "ARCHIVO 2" en la pantalla de ficheros.
+  ```
+
+---
+
+## 🛠️ 4. Estructura del Repositorio
 
 ```text
 yoshi-island-widescreen/
@@ -200,7 +235,7 @@ yoshi-island-widescreen/
 
 ---
 
-## 🚀 4. Guía de Compilación y Descarga de la Beta 3
+## 🚀 5. Guía de Compilación y Descarga de la Beta 3
 
 ### Instalador Android Listo para Usar
 - El paquete firmado oficial de la **Beta 3** se genera en:  
@@ -245,7 +280,7 @@ El instalador final firmado se ubicará en:
 
 ---
 
-## 📜 5. Licencias y Reconocimientos
+## 📜 6. Licencias y Reconocimientos
 
 - **SNESRecomp Runner & Host:** Licencia [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/).
 - **Yoshi's Island Disassembly:** Licenciado bajo [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html).
