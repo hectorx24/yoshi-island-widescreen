@@ -103,17 +103,19 @@ public final class YoshiActivity extends SDLActivity {
                     while ((n = in.read(buffer)) != -1) out.write(buffer, 0, n);
                 }
             }
-            File savesDir = new File(getFilesDir(), "saves");
-            savesDir.mkdirs();
-            File sram = new File(savesDir, "save.srm");
-            if (!sram.exists()) {
-                try {
-                    InputStream in = getAssets().open("seed_save.srm");
-                    FileOutputStream out = new FileOutputStream(sram);
-                    byte[] buffer = new byte[4096]; int n;
-                    while ((n = in.read(buffer)) != -1) out.write(buffer, 0, n);
-                    out.close(); in.close();
-                } catch (IOException ignored) {}
+            File[] targets = new File[] { getExternalFilesDir(null), getFilesDir() };
+            for (File baseDir : targets) {
+                if (baseDir == null) continue;
+                File savesDir = new File(baseDir, "saves");
+                savesDir.mkdirs();
+                File sram = new File(savesDir, "save.srm");
+                if (!sram.exists()) {
+                    try (InputStream in = getAssets().open("seed_save.srm");
+                         FileOutputStream out = new FileOutputStream(sram)) {
+                        byte[] buffer = new byte[4096]; int n;
+                        while ((n = in.read(buffer)) != -1) out.write(buffer, 0, n);
+                    } catch (IOException ignored) {}
+                }
             }
             if (!config.exists()) {
                 try (FileOutputStream out = new FileOutputStream(config)) {

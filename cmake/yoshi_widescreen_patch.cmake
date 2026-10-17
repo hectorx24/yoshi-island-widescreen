@@ -130,6 +130,16 @@ if(_yoshi_ppu_at EQUAL -1)
     _yoshi_ppu_source "${_yoshi_ppu_source}")
   file(WRITE "${_yoshi_ppu}" "${_yoshi_ppu_source}")
 endif()
+
+# Star counter HUD vertical lift in widescreen
+string(FIND "${_yoshi_ppu_source}" "if (y >= 28 && y < 70) y -= 14;" _yoshi_hud_at)
+if(_yoshi_hud_at EQUAL -1)
+  string(REPLACE "    uint8_t y = ppu->oam[index] >> 8;\n    uint8_t row = line - y;"
+    "    uint8_t y = ppu->oam[index] >> 8;\n    if (PpuWidescreenHudOamSlot(ppu, index, y) && (ppu->extraRightCur || ppu->extraLeftCur)) {\n      if (y >= 28 && y < 70) y -= 14;\n    }\n    uint8_t row = line - y;"
+    _yoshi_ppu_source "${_yoshi_ppu_source}")
+  file(WRITE "${_yoshi_ppu}" "${_yoshi_ppu_source}")
+endif()
+unset(_yoshi_hud_at)
 unset(_yoshi_ppu)
 unset(_yoshi_ppu_source)
 unset(_yoshi_ppu_at)

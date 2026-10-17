@@ -32,5 +32,9 @@ target_include_directories(YoshiIsland PRIVATE ${SNESRECOMP_RUNNER_INCLUDE_DIRS}
   ${SNESRECOMP_ROOT}/runner/src/desktop ${CMAKE_SOURCE_DIR}/src
   ${CMAKE_SOURCE_DIR}/config)
 target_link_libraries(YoshiIsland PRIVATE ${SNESRECOMP_RUNNER_LIBRARIES} yoshi_rcheevos)
+if (ANDROID)
+  target_link_libraries(YoshiIsland PRIVATE log)
+endif()
 snesrecomp_target_sdl(YoshiIsland)
 snesrecomp_target_desktop_host(YoshiIsland)
+

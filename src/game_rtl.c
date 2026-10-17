@@ -726,6 +726,9 @@ uint16_t YoshiBg1MarginTile(int screen_x, uint32_t wrapped_y,
     return 0x18ff;
 }
 
+uint8_t g_yoshi_layer_mask[224][512];
+int g_yoshi_layer_mask_w = 256;
+
 static void BlackUnverifiedMargins(const Ppu *ppu, unsigned line, void *context) {
     (void)context;
     if (!(ppu->extraLeftCur || ppu->extraRightCur)) return;
@@ -748,6 +751,25 @@ static void BlackUnverifiedMargins(const Ppu *ppu, unsigned line, void *context)
     /* Raster writes may change a row between lines. Cache only within the
      * line, never across an HDMA/journal boundary. */
     memset(s_map_rows, 0, sizeof(s_map_rows));
+}
+
+static void YoshiObserveScanline(const Ppu *ppu, unsigned line, void *context) {
+    if (line >= 1 && line <= 224) {
+        int y = (int)line - 1;
+        int left_cur = ppu->extraLeftCur;
+        int right_cur = ppu->extraRightCur;
+        int w = 256 + left_cur + right_cur;
+        if (w > 512) w = 512;
+        g_yoshi_layer_mask_w = w;
+        for (int sx = -left_cur; sx < 256 + right_cur; ++sx) {
+            int x = sx + left_cur;
+            if (x >= 0 && x < 512) {
+                uint16_t bg = ppu->bgBuffers[0].data[sx + ppu->extraLeftRight];
+                g_yoshi_layer_mask[y][x] = (uint8_t)((bg >> 8) & 0x0f);
+            }
+        }
+    }
+    BlackUnverifiedMargins(ppu, line, context);
 }
 
 /* Diagnostic private replay: verify that a copied GSU task reproduces the
@@ -1183,10 +1205,9 @@ void GameDrawPpuFrame(void)
          KnownPlane(1, UINT64_C(0x6fa20925f750ef82)) ||
          KnownPlane(1, UINT64_C(0xb90b47846352a325)) ||
          KnownPlane(1, UINT64_C(0x3d8886a46bef4765))) ? 1 : 0);
-    if (g_ppu->extraLeftCur || g_ppu->extraRightCur)
-        snes_beam_frame_driver_draw_ppu_frame_observed(BlackUnverifiedMargins, NULL);
-    else
-        snes_beam_frame_driver_draw_ppu_frame();
+    PpuSetWsHudOamBand(g_ppu, 70, 48, 160);
+    PpuSetWsHudOamShiftRange(g_ppu, 0, 8);
+    snes_beam_frame_driver_draw_ppu_frame_observed(YoshiObserveScanline, NULL);
 }
 
 void GameSessionReset(void)

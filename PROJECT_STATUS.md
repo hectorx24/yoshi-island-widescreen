@@ -127,8 +127,8 @@
 
 <!-- checkpoint:begin -->
 ## Automatic checkpoint
-- Checked 2026-10-17T04:55:58+00:00; Private ARM64 Beta 3 APK built and package/signature verified
-- Git base at checkpoint: a7a92ce; 14 changed/untracked paths (run git status).
+- Checked 2026-10-17T05:45:06+00:00; Private ARM64 Beta 3 APK built and package/signature verified
+- Git base at checkpoint: f205527; 10 changed/untracked paths (run git status).
 - Last supported quota observation (2026-10-15T20:53:30+00:00): five_hour: 0% remaining; weekly: 78% remaining.
 - LOW QUOTA: handoff saved; preserve WIP and precise next action before further expensive work.
 <!-- checkpoint:end -->

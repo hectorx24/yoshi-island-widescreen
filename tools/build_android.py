@@ -66,6 +66,10 @@ def main():
     shutil.copy2(apk, beta3_apk)
     downloads_apk = Path('/Users/hectorx24/Downloads/YoshiIsland_Widescreen_Beta_3.apk')
     shutil.copy2(apk, downloads_apk)
+    gdrive_apk = Path('/Users/hectorx24/Google Drive/Mi unidad/YoshiIsland_Widescreen_Beta_3.apk')
+    if gdrive_apk.parent.exists():
+        shutil.copy2(apk, gdrive_apk)
+        print(f'Google Drive APK created: {gdrive_apk}')
     print(f'Beta 3 APK created: {beta3_apk} and {downloads_apk}')
     
     run(sys.executable,root/'tools/checkpoint.py','--event','Private ARM64 Beta 3 APK built and package/signature verified')
