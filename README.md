@@ -50,6 +50,38 @@ Recompilación nativa y ejecución en arquitecturas ARM64 (Android y macOS) de *
 | **Controles Táctiles** | Botones genéricos pegados al borde de la pantalla que se recortaban. | Layout calibrado con insets seguros, sin solapamientos y auto-ocultable con mandos Bluetooth/USB. |
 | **Icono de Aplicación** | Cuadrado recortado o círculo pequeño sobre placa blanca. | Arte completo original de Yoshi y Bebé Mario respetando las directrices de launcher adaptativo. |
 
+### Galería de Capturas Técnicas y Comparativas
+
+> *Nota: Las capturas mostradas a continuación se presentan exclusivamente con fines ilustrativos, informativos y de verificación técnica de las mejoras visuales.*
+
+#### 1. Adaptación Panorámica y Controles en Pantalla Completa (20:9)
+| Experiencia en Dispositivo Móvil (2772×1272) | Controles Táctiles con Insets Seguros |
+| :---: | :---: |
+| ![Pantalla completa en móvil](docs/captures/phone-fullscreen_2772x1272.png) | ![Controles táctiles calibrados](docs/captures/touch-ui.png) |
+
+#### 2. Composiciones de Escena: Batallas contra Jefes
+| Encuadre Original (4:3) | Composición Temática Expandida (20:9) |
+| :---: | :---: |
+| ![Jefe 1-4 Nativo](docs/captures/boss_battle_native.png) | ![Jefe 1-4 Burt Widescreen Temático](docs/captures/burt_themed_fullscreen_2772x1272.png) |
+
+#### 3. Preset Visual "Island Cinema" (Comparativa de Iluminación y Filtro)
+| Píxeles Crudos (Sharp) | Suavizado Subpíxel (Soft) | Acabado Final "Island Cinema" (2D-HD) |
+| :---: | :---: | :---: |
+| ![Preset Sharp](docs/captures/sharp.png) | ![Preset Soft](docs/captures/soft.png) | ![Preset Lighting 2D-HD](docs/captures/lighting.png) |
+
+#### 4. Entornos Diversos en Panorámico Nativo (Sin Barras Negras)
+| Praderas y Colinas (Mundo 1-1) | Caverna Subterránea con Chomp Rock (Mundo 1-2) |
+| :---: | :---: |
+| ![Widescreen Colinas](docs/captures/fullscreen_420x224_after_move.png) | ![Widescreen Caverna Chomp Rock](docs/captures/level1_2_chomp_wide_fixed.png) |
+
+| Jungla y Bosque (Mundo 3-1) | Lago y Agua (Mundo 3-7) |
+| :---: | :---: |
+| ![Widescreen Jungla](docs/captures/level3_1_fixed_wide.png) | ![Widescreen Agua](docs/captures/level3_7_wide_9380.png) |
+
+| Montaña y Nieve (Mundo 5-1 / 5-2) | Castillo y Lava (Mundo 6-8) |
+| :---: | :---: |
+| ![Widescreen Nieve](docs/captures/level5_1_wide_9380.png) | ![Widescreen Castillo de Bowser](docs/captures/level6_8_wide_9340.png) |
+
 ---
 
 ## 3. Instrucciones de Compilación y Uso
