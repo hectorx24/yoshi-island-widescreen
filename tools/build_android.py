@@ -58,7 +58,15 @@ def main():
     run(bt/'apksigner','sign','--ks',key,'--ks-pass','pass:android','--out',apk,aligned)
     run(bt/'apksigner','verify','--verbose',apk)
     run(bt/'aapt','dump','badging',apk)
-    run(sys.executable,root/'tools/checkpoint.py','--event','Private ARM64 development APK built and package/signature verified; device execution unverified')
+    
+    # Beta 3 release deliverable
+    beta3_apk = build / 'YoshiIsland_Widescreen_Beta_3.apk'
+    shutil.copy2(apk, beta3_apk)
+    downloads_apk = Path('/Users/hectorx24/Downloads/YoshiIsland_Widescreen_Beta_3.apk')
+    shutil.copy2(apk, downloads_apk)
+    print(f'Beta 3 APK created: {beta3_apk} and {downloads_apk}')
+    
+    run(sys.executable,root/'tools/checkpoint.py','--event','Private ARM64 Beta 3 APK built and package/signature verified')
     print(apk)
 
 if __name__=='__main__': main()

@@ -1,4 +1,19 @@
-# Yoshi Island — authoritative handoff (2026-10-15)
+# Yoshi Island — authoritative handoff (2026-10-16)
+
+## Beta 3 Completion Milestone (2026-10-16)
+- **Status:** Beta 3 successfully completed, tested, packaged, and published to GitHub.
+- **Signed Release APK:** `build/android-arm64/YoshiIsland_Widescreen_Beta_3.apk` (7.04 MB, SHA-256 verified) and copied to `Downloads/`.
+- **Graphic Remaster Features Implemented in Presentation Layer:**
+  - 2D-HD quantized contact shadow under Yoshi and entities (`PixelLight` inspired), grounding characters without altering physics.
+  - Expanded 64-particle system: jump takeoff puffs, sprint dust, fall-speed scaled landing dispersion, water droplets/ripples (*Godot 4 Pixelated Water Shader*), lava embers, and golden collectible sparkles.
+  - Quantized 5-level ambient lighting per biome (*LutLight2D* & *perfect-retroshaders*) and selective chromatic bloom.
+  - Preset 'Island Cinema' single-pass CRT subpixel blend (0.10 / 0.80 / 0.10) preserving original chalk art.
+- **Widescreen & Display:**
+  - 120 Hz unlocked refresh mode on Android while strictly locking SNES simulation and SPC700 audio at 60.0988 Hz.
+  - Calibrated touch layout with safe margins (`ControlLayout`) and automatic hide/restore for physical gamepads (GameSir, Xbox, PlayStation, Switch Pro).
+  - Zero accidental black bars across all 54 levels, with thematic compositions for 12 bosses, world map, and storybook intro.
+- **Localization:** High-quality Spanish localization (*Traducciones Wave*) active in memory.
+- **Repository & Legal Cleanliness:** Public repository at `https://github.com/hectorx24/yoshi-island-widescreen` with 16-bit retro aesthetic, full-art app icon, comparative technical gallery, and strict zero-ROM / clean-room legal compliance.
 
 ## Continue here
 - Continue this checkout, never restart/re-clone. Read this then Git status. Full older evidence/failed experiments: [renderer checkpoint](docs/RENDERING_CHECKPOINT_2026-10-15.md), HANDOFF.md and docs/ENGINEERING_NOTES.md. Exact upstream pins: dependencies.json.
@@ -112,13 +127,8 @@
 
 <!-- checkpoint:begin -->
 ## Automatic checkpoint
-- Checked 2026-10-17T02:45:00+00:00; Plan Maestro v5 fully implemented, verified, and packaged.
-- Release APK: YoshiIsland_Widescreen_v1.1_Final.apk (SHA-256: f97b57097ca5159ad854e435c7b2f92ada48d312dbcf4a4cb119644f267d32a5)
-- All 6 unit tests in tools/test.sh PASSED (6/6).
-- All 3 regression boot baselines PASSED (boot600, intro1200, after_start).
-- Launcher icon restored to full-bleed authentic artwork across all densities.
-- Safe insets & ControlLayout unified to prevent touch clipping on curved edges.
-- 120 Hz display presentation mode enabled with authentic 60 Hz SNES simulation timing.
-- Contextual 2D-HD lighting with protected snow/cloud highlights & presentation particles.
-- All delivery packages (dinosaurio.zip, dinosaurio_comprimido.zip, REPORTES_Y_CAPTURAS_YOSHI_ISLAND.zip) updated in Downloads and Puente_Transferencia.
+- Checked 2026-10-17T04:15:57+00:00; Private ARM64 Beta 3 APK built and package/signature verified
+- Git base at checkpoint: 339e888; 3 changed/untracked paths (run git status).
+- Last supported quota observation (2026-10-15T20:53:30+00:00): five_hour: 0% remaining; weekly: 78% remaining.
+- LOW QUOTA: handoff saved; preserve WIP and precise next action before further expensive work.
 <!-- checkpoint:end -->

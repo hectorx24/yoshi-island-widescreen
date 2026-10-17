@@ -34,13 +34,22 @@ static SDL_Texture *s_backdrop_texture;
 static SDL_Renderer *s_backdrop_renderer;
 extern uint8_t g_ram[0x20000];
 
-#define MAX_VISUAL_PARTICLES 32
+#define MAX_VISUAL_PARTICLES 64
+typedef enum {
+    PARTICLE_DUST = 0,
+    PARTICLE_WATER_SPLASH,
+    PARTICLE_WATER_RIPPLE,
+    PARTICLE_EMBER,
+    PARTICLE_SPARKLE
+} ParticleType;
+
 typedef struct {
     float x, y;
     float vx, vy;
     float life, max_life;
     uint8_t r, g, b, a;
     float size;
+    ParticleType type;
     bool active;
 } VisualParticle;
 
@@ -48,6 +57,8 @@ static VisualParticle s_particles[MAX_VISUAL_PARTICLES];
 static uint32_t s_visual_rng = 0x1337BEEF;
 static uint8_t s_prev_action = 0;
 static uint8_t s_prev_yspeed = 0;
+static uint8_t s_prev_stars = 0;
+static uint8_t s_prev_coins = 0;
 static unsigned s_particle_frame = 0;
 
 static inline float VisualRand(void) {
@@ -56,7 +67,7 @@ static inline float VisualRand(void) {
 }
 
 static void SpawnParticle(float x, float y, float vx, float vy, float life,
-                          uint8_t r, uint8_t g, uint8_t b, uint8_t a, float size) {
+                          uint8_t r, uint8_t g, uint8_t b, uint8_t a, float size, ParticleType type) {
     for (int i = 0; i < MAX_VISUAL_PARTICLES; ++i) {
         if (!s_particles[i].active) {
             s_particles[i].x = x;
@@ -70,6 +81,7 @@ static void SpawnParticle(float x, float y, float vx, float vy, float life,
             s_particles[i].b = b;
             s_particles[i].a = a;
             s_particles[i].size = size;
+            s_particles[i].type = type;
             s_particles[i].active = true;
             break;
         }
@@ -342,24 +354,68 @@ int YoshiComposeFrame(uint8_t *dst, size_t pitch, const uint8_t *field,
         s_particle_frame++;
         uint8_t action = g_ram[0x0378];
         uint8_t yspeed = g_ram[0x0388];
+        float yx = (float)g_ram[0x00a0];
+        float yy = (float)g_ram[0x00a2] + 28.0f;
 
-        // Landing dust puff
+        // 1. Landing dust puff (scaled with fall velocity)
         if (s_prev_yspeed > 2 && yspeed == 0 && action == 0) {
-            float yx = (float)g_ram[0x00a0];
-            float yy = (float)g_ram[0x00a2] + 28.0f;
-            SpawnParticle(yx - 4.0f, yy, -0.6f, -0.3f, 0.35f, 220, 210, 190, 180, 2.0f);
-            SpawnParticle(yx + 4.0f, yy,  0.6f, -0.3f, 0.35f, 220, 210, 190, 180, 2.0f);
+            float spread = (float)s_prev_yspeed * 0.12f;
+            SpawnParticle(yx - 4.0f, yy, -0.5f - spread, -0.3f, 0.35f, 220, 210, 190, 180, 2.0f, PARTICLE_DUST);
+            SpawnParticle(yx + 4.0f, yy,  0.5f + spread, -0.3f, 0.35f, 220, 210, 190, 180, 2.0f, PARTICLE_DUST);
         }
 
-        // Lava floating embers in volcanic scenes
-        if ((lvl == 53 || lvl == 54 || lvl == 56 || lvl == 60) && (s_particle_frame % 28 == 0)) {
+        // 2. Jump takeoff dust puff
+        if (s_prev_action == 0 && action == 2) {
+            SpawnParticle(yx - 3.0f, yy, -0.4f, -0.2f, 0.25f, 215, 205, 185, 150, 1.6f, PARTICLE_DUST);
+            SpawnParticle(yx + 3.0f, yy,  0.4f, -0.2f, 0.25f, 215, 205, 185, 150, 1.6f, PARTICLE_DUST);
+        }
+
+        // 3. Running sprint dust
+        if (action == 1 && (s_particle_frame % 16 == 0)) {
+            SpawnParticle(yx + (VisualRand() - 0.5f) * 6.0f, yy, (VisualRand() - 0.5f) * 0.4f, -0.2f, 0.25f, 215, 205, 185, 130, 1.4f, PARTICLE_DUST);
+        }
+
+        // 4. Water environment splashes and circular expanding ripples
+        if (lvl == 12 || lvl == 14 || lvl == 25 || lvl == 40 || lvl == 44) {
+            // Ripple near surface
+            if (action == 4 || (s_particle_frame % 30 == 0 && yy > 160.0f)) {
+                SpawnParticle(yx, yy > 170.0f ? yy - 6.0f : yy, 0.0f, 0.0f, 0.6f, 180, 225, 255, 140, 3.0f, PARTICLE_WATER_RIPPLE);
+            }
+            // Droplet splash on jump/entry in water
+            if (s_prev_action != 4 && action == 4) {
+                for (int d = -2; d <= 2; ++d) {
+                    SpawnParticle(yx + (float)d * 3.0f, yy - 4.0f, (float)d * 0.35f, -0.8f - VisualRand() * 0.4f,
+                                  0.45f, 160, 220, 255, 200, 1.8f, PARTICLE_WATER_SPLASH);
+                }
+            }
+        }
+
+        // 5. Lava floating embers in volcanic scenes
+        if ((lvl == 53 || lvl == 54 || lvl == 56 || lvl == 60) && (s_particle_frame % 20 == 0)) {
             float ex = VisualRand() * 256.0f;
-            SpawnParticle(ex, 220.0f, (VisualRand() - 0.5f) * 0.4f, -0.8f - VisualRand() * 0.5f,
-                          1.2f, 255, 120 + (uint8_t)(VisualRand() * 60), 30, 200, 1.5f);
+            SpawnParticle(ex, 220.0f, (VisualRand() - 0.5f) * 0.35f, -0.7f - VisualRand() * 0.5f,
+                          1.3f, 255, 130 + (uint8_t)(VisualRand() * 60), 30, 210, 1.6f, PARTICLE_EMBER);
+        }
+
+        // 6. Collectible star and coin golden sparkles
+        uint8_t cur_stars = g_ram[0x03b6];
+        uint8_t cur_coins = g_ram[0x037b];
+        if (s_prev_stars != 0 && cur_stars > s_prev_stars) {
+            for (int s = 0; s < 4; ++s) {
+                float angle = (float)s * 1.570796f + VisualRand() * 0.5f;
+                SpawnParticle(yx, yy - 14.0f, cosf(angle) * 0.6f, sinf(angle) * 0.6f,
+                              0.4f, 255, 230, 60, 220, 2.2f, PARTICLE_SPARKLE);
+            }
+        }
+        if (s_prev_coins != 0 && cur_coins > s_prev_coins) {
+            SpawnParticle(yx + (VisualRand() - 0.5f) * 8.0f, yy - 12.0f, 0.0f, -0.6f,
+                          0.35f, 255, 220, 80, 200, 1.8f, PARTICLE_SPARKLE);
         }
 
         s_prev_action = action;
         s_prev_yspeed = yspeed;
+        s_prev_stars = cur_stars;
+        s_prev_coins = cur_coins;
     }
 
     const size_t size = (size_t)width * height * 4;
@@ -543,12 +599,52 @@ bool YoshiRenderPresentation(SDL_Renderer *renderer, SDL_Texture *texture,
             if (lighting) s_applied |= 2;
         }
     }
+    /* Render subtle 2D-HD Contact Shadow under Yoshi (PixelLight inspired) */
+    if (g_ram[0x0118] == 0x0e || g_ram[0x0118] == 0x0f) {
+        uint8_t yoshi_raw_x = g_ram[0x00a0];
+        uint8_t yoshi_raw_y = g_ram[0x00a2];
+        uint8_t action = g_ram[0x0378];
+
+        if (yoshi_raw_x > 0 && yoshi_raw_x < 248 && yoshi_raw_y > 0 && yoshi_raw_y < 210) {
+            float extra = (float)(source->w - 256) * 0.5f;
+            float buffer_x = (float)yoshi_raw_x + extra + 8.0f;
+            float buffer_y = (float)yoshi_raw_y + 29.0f;
+            float center_x = destination->x + (buffer_x / (float)source->w) * destination->w;
+            float center_y = destination->y + (buffer_y / (float)source->h) * destination->h;
+
+            float base_rx = 8.5f * px;
+            float base_ry = 3.0f * py;
+            uint8_t shadow_alpha = (action == 2 || action == 3) ? 35 : 65;
+
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            // Outer soft penumbra
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, (uint8_t)(shadow_alpha / 2));
+#if SNESRECOMP_SDL3
+            SDL_FRect outer = {center_x - base_rx, center_y - base_ry, base_rx * 2.0f, base_ry * 2.0f};
+            SDL_RenderFillRect(renderer, &outer);
+            // Inner core contact
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, shadow_alpha);
+            SDL_FRect inner = {center_x - base_rx * 0.55f, center_y - base_ry * 0.55f, base_rx * 1.1f, base_ry * 1.1f};
+            SDL_RenderFillRect(renderer, &inner);
+#else
+            SDL_Rect outer = {(int)(center_x - base_rx), (int)(center_y - base_ry), (int)(base_rx * 2.0f), (int)(base_ry * 2.0f)};
+            SDL_RenderFillRect(renderer, &outer);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, shadow_alpha);
+            SDL_Rect inner = {(int)(center_x - base_rx * 0.55f), (int)(center_y - base_ry * 0.55f), (int)(base_rx * 1.1f), (int)(base_ry * 1.1f)};
+            SDL_RenderFillRect(renderer, &inner);
+#endif
+        }
+    }
+
     /* Render active contextual presentation particles */
     for (int i = 0; i < MAX_VISUAL_PARTICLES; ++i) {
         if (s_particles[i].active) {
             VisualParticle *p = &s_particles[i];
             p->x += p->vx;
             p->y += p->vy;
+            if (p->type == PARTICLE_EMBER) {
+                p->x += sinf(p->life * 6.0f) * 0.2f;
+            }
             p->life -= 0.016667f;
             if (p->life <= 0.0f) {
                 p->active = false;
@@ -560,14 +656,27 @@ bool YoshiRenderPresentation(SDL_Renderer *renderer, SDL_Texture *texture,
             SDL_SetRenderDrawColor(renderer, p->r, p->g, p->b, cur_a);
             float screen_x = destination->x + (p->x / 256.0f) * destination->w;
             float screen_y = destination->y + (p->y / 224.0f) * destination->h;
-            float p_size = p->size * px;
+
+            if (p->type == PARTICLE_WATER_RIPPLE) {
+                float ripple_w = p->size * (1.0f + (1.0f - alpha_frac) * 3.0f) * px;
+                float ripple_h = ripple_w * 0.35f;
 #if SNESRECOMP_SDL3
-            SDL_FRect pr = {screen_x - p_size * 0.5f, screen_y - p_size * 0.5f, p_size, p_size};
-            SDL_RenderFillRect(renderer, &pr);
+                SDL_FRect rp = {screen_x - ripple_w * 0.5f, screen_y - ripple_h * 0.5f, ripple_w, ripple_h};
+                SDL_RenderRect(renderer, &rp);
 #else
-            SDL_Rect pr = {(int)(screen_x - p_size * 0.5f), (int)(screen_y - p_size * 0.5f), (int)p_size, (int)p_size};
-            SDL_RenderFillRect(renderer, &pr);
+                SDL_Rect rp = {(int)(screen_x - ripple_w * 0.5f), (int)(screen_y - ripple_h * 0.5f), (int)ripple_w, (int)ripple_h};
+                SDL_RenderRect(renderer, &rp);
 #endif
+            } else {
+                float p_size = p->size * px;
+#if SNESRECOMP_SDL3
+                SDL_FRect pr = {screen_x - p_size * 0.5f, screen_y - p_size * 0.5f, p_size, p_size};
+                SDL_RenderFillRect(renderer, &pr);
+#else
+                SDL_Rect pr = {(int)(screen_x - p_size * 0.5f), (int)(screen_y - p_size * 0.5f), (int)p_size, (int)p_size};
+                SDL_RenderFillRect(renderer, &pr);
+#endif
+            }
         }
     }
 

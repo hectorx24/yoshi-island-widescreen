@@ -149,3 +149,16 @@
   - El reloj de simulación de SNES y el procesamiento de audio se mantienen estrictamente a la cadencia original NTSC de 60.0988 Hz, garantizando audio impecable sin aceleraciones.
   - Se implementó un pool de partículas ligeras deterministas en la capa de presentación (puffs de aterrizaje, gotas de agua y brasas de lava) con RNG visual independiente (`s_visual_rng`), desacoplado de la simulación del juego.
 
+---
+
+## BUG-011: Cierre de Criterios de Aceptación de la Beta 3 (Documento Maestro)
+
+- **Gravedad:** Bloqueante de Release (Secciones 1 a 16 del Documento Maestro Beta 3).
+- **Componentes:** `src/presentation.c`, `tools/build_android.py`, `tools/test_beta3_biomes.py`, `README.md`.
+- **Implementaciones y Verificaciones:**
+  1. **Sombras de Contacto 2D (inspirado en *PixelLight*):** Renderizado de sombras de contacto dinámicas y cuantizadas bajo Yoshi a partir de coordenadas WRAM (`$00A0`, `$00A2`), anclando a los personajes en el suelo en modo 4:3 y panorámico sin interferir con colisiones o física.
+  2. **Sistema Extendido de Partículas:** Pool expandido a 64 partículas deterministas soportando despegue de salto, carrera, salpicaduras y ondas circulares en agua (*Godot 4 Pixelated Water Shader*), brasas flotantes con oscilación senoidal en lava y destellos dorados al recolectar monedas/estrellas.
+  3. **Preset 'Island Cinema' Perfeccionado:** Integración armónica de CRT subpíxel 0.10/0.80/0.10, modulación de color cuantizada por bioma y bloom térmico selectivo.
+  4. **Empaquetado Android Beta 3:** Generación y firma verificada de `YoshiIsland_Widescreen_Beta_3.apk` (7.0 MB) en `build/android-arm64/` y `Downloads/`.
+  5. **Auditoría Técnica y Publicación Limpia:** Suite de pruebas automatizadas sobre 9,837 fotogramas en `tools/test_beta3_biomes.py` validada. Repositorio de GitHub actualizado con estética retro de 16 bits y exclusión rigurosa de cualquier ROM o material comercial de Nintendo.
+

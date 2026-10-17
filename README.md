@@ -1,5 +1,10 @@
+<div align="center">
+
+<img src="docs/assets/icon.png" width="140" alt="Yoshi's Island Icon" style="border-radius: 22%; box-shadow: 0 8px 24px rgba(0,0,0,0.4);" />
+
 # ╔══════════════════════════════════════════════════════════════════════════════╗
 # ║  SUPER MARIO WORLD 2: YOSHI'S ISLAND · NATIVE ARM64 & ANDROID RECOMPILATION ║
+# ║                           ·  B E T A   3  ·                                  ║
 # ╚══════════════════════════════════════════════════════════════════════════════╝
 
 ```text
@@ -15,11 +20,10 @@
         |_| \___/|____/|_| |_|___|_____|   |___|____/|_____/_/   \_\_| \_|____/ 
 ```
 
-<div align="center">
-
-[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20macOS%20ARM64-brightgreen.svg?style=for-the-badge&logo=android)](https://github.com/hectorx24/yoshi-island-widescreen)
-[![Aspect Ratio](https://img.shields.io/badge/Aspect%20Ratio-16%3A9%20%7C%2020%3A9%20Native%20Widescreen-blue.svg?style=for-the-badge)](https://github.com/hectorx24/yoshi-island-widescreen)
-[![Visual Engine](https://img.shields.io/badge/Visual%20Engine-Island%20Cinema%202D--HD-purple.svg?style=for-the-badge)](https://github.com/hectorx24/yoshi-island-widescreen)
+[![Version](https://img.shields.io/badge/Release-Beta%203-brightgreen.svg?style=for-the-badge)](https://github.com/hectorx24/yoshi-island-widescreen)
+[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20macOS%20ARM64-blue.svg?style=for-the-badge&logo=android)](https://github.com/hectorx24/yoshi-island-widescreen)
+[![Aspect Ratio](https://img.shields.io/badge/Widescreen-16%3A9%20%7C%2020%3A9%20Native-blueviolet.svg?style=for-the-badge)](https://github.com/hectorx24/yoshi-island-widescreen)
+[![Visual Engine](https://img.shields.io/badge/Visual%20Remaster-Island%20Cinema%202D--HD-purple.svg?style=for-the-badge)](https://github.com/hectorx24/yoshi-island-widescreen)
 [![Display](https://img.shields.io/badge/Display-120%20Hz%20Unlocked-orange.svg?style=for-the-badge)](https://github.com/hectorx24/yoshi-island-widescreen)
 [![Language](https://img.shields.io/badge/Localization-Espa%C3%B1ol%20(Traducciones%20Wave)-yellow.svg?style=for-the-badge)](https://github.com/hectorx24/yoshi-island-widescreen)
 [![Legal Clean](https://img.shields.io/badge/License-No%20ROMs%20%7C%20Open%20Source%20Only-red.svg?style=for-the-badge)](https://github.com/hectorx24/yoshi-island-widescreen)
@@ -44,26 +48,28 @@
 > Cada usuario debe aportar su propia copia legalmente adquirida de la ROM original (*Super Mario World 2: Yoshi's Island - USA v1.1*, SHA-256: `bd763c1a56365c244be92e6cffefd318780a2a19eda7d5baf1c6d5bd6c1b3e06`) para compilar y ejecutar el proyecto en su propio equipo para uso estrictamente personal y privado.
 > 
 > **3. Contenido del Repositorio:**
-> Este repositorio contiene exclusivamente código fuente original de reimplementación (C, Java, Python), herramientas de desarrollo, scripts de compilación, especificaciones de geometría de capas y documentación técnica.
+> Este repositorio contiene exclusivamente código fuente original de reimplementación (C, Java, Python), herramientas de desarrollo, scripts de compilación, especificaciones de geometría de capas y documentación técnica bajo licencias de código abierto.
 > 
 > **4. Capturas Ilustrativas (Uso Legítimo / Fair Use):**
 > Las capturas de pantalla técnicas contenidas en esta documentación se publican exclusivamente con fines ilustrativos, informativos, educativos y comparativos para documentar las mejoras técnicas y visuales desarrolladas por el proyecto.
 
 ---
 
-## 🎮 1. Características Principales
+## 🎮 1. Novedades y Características de la Beta 3
 
 ```text
 ┌────────────────────────────┬────────────────────────────────────────────────────────┐
-│ Característica             │ Descripción Técnica                                    │
+│ Característica             │ Descripción Técnica Implementada                       │
 ├────────────────────────────┼────────────────────────────────────────────────────────┤
 │ Widescreen Panorámico Real │ Viewport extendido hasta 420×224 píxeles (16:9/20:9).  │
 │ Centro SNES Byte-Idéntico  │ Los 256×224 píxeles centrales son 100% idénticos al    │
 │                            │ hardware original de Super Nintendo (cero desync).     │
+│ Sombras de Contacto 2D     │ Sombra de contacto dinámicamente proyectada bajo Yoshi │
+│ (inspirado en PixelLight)  │ y entidades, anclándolos físicamente al terreno.       │
+│ Sistema Extendido de       │ Polvo de despegue/carrera/aterrizaje, salpicaduras y   │
+│ Partículas Deterministas   │ ondas en agua, brasas de lava y destellos al colectar. │
 │ Preset "Island Cinema"     │ Suavizado CRT subpíxel 0.10/0.80/0.10 e iluminación    │
-│                            │ contextual 2D-HD respetando el arte en tiza original.  │
-│ Partículas Ambientales     │ Polvo al aterrizar, gotas de agua y brasas de lava     │
-│                            │ generadas determinísticamente en capa de presentación. │
+│ (2D-HD Remaster)           │ contextual por bioma respetando el arte en tiza.       │
 │ Frecuencia a 120 Hz        │ Presentación desacoplada a 120 Hz en Android mientras  │
 │                            │ la física y audio SNES corren a 60.0988 Hz exactos.    │
 │ Traducción al Español      │ Textos integrados en memoria con ortografía completa   │
@@ -78,20 +84,18 @@
 
 ## 📸 2. Comparativas Técnicas: Antes y Después
 
-> *Nota: Todas las capturas mostradas han sido generadas por el arnés de pruebas del proyecto con fines de auditoría técnica y documentación.*
+> *Nota: Todas las capturas mostradas a continuación han sido generadas por el arnés de pruebas automatizado de la Beta 3 (`tools/test_beta3_biomes.py`) para documentar objetivamente los algoritmos y mejoras visuales.*
 
-### A. Comparativa de Filtros de Imagen (Misma Escena de Juego)
+### A. Modos de Filtrado Visual e Iluminación (Misma Escena de Juego)
 
-Comparación lado a lado del renderizado de la imagen en los tres modos de visualización disponibles:
-
-| 1. Sin Filtro (Píxeles Crudos 1×1) | 2. Con Suavizado Subpíxel (Soft CRT) | 3. Preset Final "Island Cinema" (2D-HD) |
+| 1. Sin Filtro (Píxeles Crudos 1×1) | 2. Con Suavizado Subpíxel (Soft CRT) | 3. Acabado Final "Island Cinema" (2D-HD) |
 | :---: | :---: | :---: |
 | ![Sin Filtro Sharp](docs/captures/sharp.png) | ![Filtro Soft Subpixel](docs/captures/soft.png) | ![Preset Island Cinema 2D-HD](docs/captures/lighting.png) |
-| *Píxel art crudo escalado directamente sin filtrado (bordes pixelados duros).* | *Suavizado horizontal subpíxel que recrea la suavidad del fósforo de un CRT.* | *Iluminación contextual 2D-HD con bloom térmico en fuentes de luz y partículas.* |
+| *Píxel art crudo escalado directamente sin filtrado (bordes pixelados duros).* | *Suavizado horizontal subpíxel 0.10/0.80/0.10 emulando la caída del fósforo CRT.* | *Iluminación contextual 2D-HD, sombras de contacto, partículas y bloom térmico.* |
 
 ---
 
-### B. Comparativa de Aspect Ratio: 4:3 Tradicional vs Panorámico Nativo
+### B. Formato de Pantalla: 4:3 Tradicional vs Panorámico Nativo
 
 | Formato Original SNES (4:3 con Barras Negras) | Formato Panorámico Nativo Extendido (16:9 / 20:9) |
 | :---: | :---: |
@@ -141,13 +145,14 @@ yoshi-island-widescreen/
 │   └── res/                 # Iconos adaptativos en arte completo (sin bordes blancos)
 ├── cmake/                   # Módulos de configuración CMake y parches modulares
 ├── config/                  # Mapeo de bancos y cabeceras de recompilación
-├── docs/                    # Documentación técnica y capturas comparativas
+├── docs/                    # Documentación técnica, activos y capturas comparativas
+│   ├── assets/              # Iconos oficiales en alta resolución (icon.png)
 │   ├── captures/            # Capturas de verificación técnica (Fair Use)
 │   └── ENGINEERING_NOTES.md # Notas de arquitectura e ingeniería inversa limpia
 ├── src/                     # Código fuente C de interoperabilidad y renderizado
 │   ├── display_geometry.c   # Cálculo de viewports panorámicos (16:9 y 20:9)
 │   ├── game_rtl.c           # Runtime de enlace de llamadas recompiladas
-│   ├── presentation.c       # Shader "Island Cinema", iluminación 2D-HD y partículas
+│   ├── presentation.c       # Shader "Island Cinema", sombras PixelLight y partículas
 │   ├── yoshi_spanish.c      # Inyector de subtítulos y traducción al español en memoria
 │   └── yoshi_scene_map.c    # Política de composición visual por tipo de escena
 ├── tests/                   # Scripts de regresión y verificación determinista
@@ -156,13 +161,17 @@ yoshi-island-widescreen/
 
 ---
 
-## 🚀 4. Guía de Compilación
+## 🚀 4. Guía de Compilación y Descarga de la Beta 3
 
-### Requisitos Previos
+### Instalador Android Listo para Usar
+- El paquete firmado oficial de la **Beta 3** se genera en:  
+  `build/android-arm64/YoshiIsland_Widescreen_Beta_3.apk`
+
+### Requisitos de Compilación desde el Código Fuente
 - **macOS** (Apple Silicon / Intel) o **Linux** (x86_64 / aarch64)
 - **Clang / GCC** compatible con C11
 - **Python 3.9+**, **CMake 3.22+**, **Ninja**, **Rust 1.80+**
-- **Android NDK r25+** y **Android SDK Platform 35** (exclusivo para compilar el APK)
+- **Android NDK r25+** y **Android SDK Platform 35** (para compilar la APK)
 - Copia legal y privada de la ROM original de Super Nintendo:
   - Archivo: `Super Mario World 2 - Yoshi's Island (USA) (Rev 1).smc`
   - SHA-256: `bd763c1a56365c244be92e6cffefd318780a2a19eda7d5baf1c6d5bd6c1b3e06`
@@ -174,25 +183,26 @@ yoshi-island-widescreen/
 git clone https://github.com/hectorx24/yoshi-island-widescreen.git
 cd yoshi-island-widescreen
 
-# 2. Compilar binarios de recompilación nativos
+# 2. Compilar binarios nativos
 sh tools/build.sh
 
-# 3. Ejecutar suite de pruebas de verificación de integridad
+# 3. Ejecutar suite de pruebas de verificación de integridad y biomas
 sh tools/test.sh
+python3 tools/test_beta3_biomes.py --rom "/ruta/a/tu/ROM.smc"
 
 # 4. Lanzar el juego en tu equipo suministrando tu propia ROM
 ./build/YoshiIsland --no-launcher --rom "/ruta/a/tu/ROM.smc"
 ```
 
-### Generación del APK de Android
+### Generación del APK de Android (Beta 3)
 
 ```bash
-# Generar e instalar el APK optimizado para arquitectura ARM64
+# Compilar, optimizar y firmar el instalador para dispositivos Android ARM64
 python3 tools/build_android.py --rom "/ruta/a/tu/ROM.smc"
 ```
 
-El instalador final firmado se generará en:  
-`build/android-arm64/YoshiIsland_Widescreen_v1.1_Final.apk`
+El instalador final firmado se ubicará en:  
+`build/android-arm64/YoshiIsland_Widescreen_Beta_3.apk`
 
 ---
 
@@ -202,4 +212,9 @@ El instalador final firmado se generará en:
 - **Yoshi's Island Disassembly:** Licenciado bajo [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html).
 - **Código Original de Adaptación y Shaders:** Licencia [MIT](https://opensource.org/licenses/MIT).
 - **Traducción al Español:** Basada en la localización de *Traducciones Wave* para SNES, inyectada en memoria en tiempo de ejecución.
+- **Técnicas de Remasterizado Visual:**
+  - Sombras cuantizadas inspiradas en [PixelLight](https://github.com/SalvaPixel/PixelLight).
+  - Rampas de iluminación y preservación tonal inspiradas en [LutLight2D](https://github.com/NullTale/LutLight2D).
+  - Filtrado subpíxel y corrección de escalado inspirados en [perfect-retroshaders](https://github.com/sinedied/perfect-retroshaders).
+  - Ondas y salpicaduras inspiradas en [Godot 4 Pixelated Water Shader](https://github.com/taillight-games/godot-4-pixelated-water-shader).
 - **Nintendo Co., Ltd.:** Todos los derechos de propiedad intelectual, marcas, nombres y contenidos audiovisuales originales de *Super Mario World 2: Yoshi's Island* pertenecen a Nintendo. Este proyecto es una obra de ingeniería inversa para interoperabilidad y preservación sin fines lucrativos ni comerciales.
