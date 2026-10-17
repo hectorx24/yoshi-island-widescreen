@@ -103,10 +103,22 @@ public final class YoshiActivity extends SDLActivity {
                     while ((n = in.read(buffer)) != -1) out.write(buffer, 0, n);
                 }
             }
+            File savesDir = new File(getFilesDir(), "saves");
+            savesDir.mkdirs();
+            File sram = new File(savesDir, "save.srm");
+            if (!sram.exists()) {
+                try {
+                    InputStream in = getAssets().open("seed_save.srm");
+                    FileOutputStream out = new FileOutputStream(sram);
+                    byte[] buffer = new byte[4096]; int n;
+                    while ((n = in.read(buffer)) != -1) out.write(buffer, 0, n);
+                    out.close(); in.close();
+                } catch (IOException ignored) {}
+            }
             if (!config.exists()) {
                 try (FileOutputStream out = new FileOutputStream(config)) {
                     out.write(("[General]\nAutosave=0\n[Graphics]\nFullscreen=1\nNewRenderer=1\n" +
-                               "NoSpriteLimits=0\nIgnoreAspectRatio=0\n[Sound]\nEnableAudio=1\n" +
+                               "NoSpriteLimits=1\nIgnoreAspectRatio=0\n[Sound]\nEnableAudio=1\n" +
                                "AudioFreq=32000\nAudioChannels=2\nAudioSamples=512\n" +
                                "[GamepadMap]\nEnableGamepad1=true\n").getBytes("UTF-8"));
                 }

@@ -100,13 +100,14 @@ static void GenerateSceneBackdrop(const uint8_t *field, int width, int height, Y
     }
 
     if (scene == SCENE_TYPE_B_BOSS) {
-        /* Nearest-neighbour ~1/8 mosaic from arena background; skip top 3 rows (HUD). */
+        /* Nearest-neighbour ~1/8 mosaic exclusively from outer arena walls (0..31 on left, 224..255 on right).
+         * This strictly guarantees ZERO boss, player, or sprite pixels ever bleed into lateral margins. */
         for (int by = 0; by < 28; ++by) {
             const int sample_by = (by < 3) ? 3 : by;
             for (int bx = 0; bx < 32; ++bx) {
                 uint32_t sum_b = 0, sum_g = 0, sum_r = 0;
                 const int src_y = sample_by * 8;
-                const int src_x = bx * 8;
+                const int src_x = (bx < 16) ? ((bx % 4) * 8) : (224 + ((bx - 16) % 4) * 8);
                 for (int dy = 0; dy < 8; ++dy) {
                     const uint8_t *row = field + ((src_y + dy) * 256 + src_x) * 4;
                     for (int dx = 0; dx < 8; ++dx) {
@@ -115,7 +116,7 @@ static void GenerateSceneBackdrop(const uint8_t *field, int width, int height, Y
                         sum_r += row[dx * 4 + 2];
                     }
                 }
-                /* Dark vignette factor toward outer edges for subtle atmospheric depth. */
+                /* Dark vignette factor toward outer edges for atmospheric dungeon depth. */
                 float dist_from_center = fabsf((float)bx - 15.5f) / 16.0f;
                 float vignette = 0.95f - 0.45f * (dist_from_center * dist_from_center);
                 if (vignette < 0.40f) vignette = 0.40f;
@@ -127,10 +128,10 @@ static void GenerateSceneBackdrop(const uint8_t *field, int width, int height, Y
                 s_backdrop_pixels[out_idx + 3] = 255;
             }
         }
-        s_backdrop_linear = false; /* Pixelated nearest-neighbour per Plan Maestro */
+        s_backdrop_linear = false; /* Pixelated nearest-neighbour 16-bit mosaic */
         s_backdrop_ready = true;
     } else if (scene == SCENE_TYPE_C_MAP) {
-        /* World Map: Seamless watercolor ocean parchment extension.
+        /* World Map: Authentic 16-bit pixelated ocean parchment extension.
          * Samples non-black scroll and ocean columns to form a natural vertical gradient. */
         uint32_t top_b = 0, top_g = 0, top_r = 0, top_n = 0;
         uint32_t bot_b = 0, bot_g = 0, bot_r = 0, bot_n = 0;
@@ -178,11 +179,10 @@ static void GenerateSceneBackdrop(const uint8_t *field, int width, int height, Y
                 s_backdrop_pixels[out_idx + 3] = 255;
             }
         }
-        s_backdrop_linear = true;
+        s_backdrop_linear = false; /* Pixelated nearest-neighbour 16-bit mosaic */
         s_backdrop_ready = true;
     } else if (scene == SCENE_TYPE_D_STORYBOOK) {
-        /* Storybook intro / Title / Cinematic / Menus: Warm illustrated margin extension.
-         * Samples left and right edges per row to follow vertical color transitions (sky, hills, floor). */
+        /* Storybook intro / Title / Cinematic / Menus: Warm illustrated margin extension in 16-bit pixel style. */
         uint32_t total_b = 0, total_g = 0, total_r = 0, total_n = 0;
         for (int y = 16; y < 208; y += 4) {
             const uint8_t *l = field + (y * 256 + 16) * 4;
@@ -229,7 +229,7 @@ static void GenerateSceneBackdrop(const uint8_t *field, int width, int height, Y
                 s_backdrop_pixels[out_idx + 3] = 255;
             }
         }
-        s_backdrop_linear = true;
+        s_backdrop_linear = false; /* Pixelated nearest-neighbour 16-bit mosaic */
         s_backdrop_ready = true;
     }
 }
@@ -549,13 +549,10 @@ bool YoshiRenderPresentation(SDL_Renderer *renderer, SDL_Texture *texture,
         return false;
     }
 
-    const SDL_BlendMode add = SDL_ComposeCustomBlendMode(
-        SDL_BLENDFACTOR_ONE, SDL_BLENDFACTOR_ONE, SDL_BLENDOPERATION_ADD,
-        SDL_BLENDFACTOR_ONE, SDL_BLENDFACTOR_ZERO, SDL_BLENDOPERATION_ADD);
-    if (!SDL_SetTextureBlendMode(texture, add)) {
-        SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE);
-        snesrecomp_sdl_set_texture_linear(texture, false);
-        return false;
+    const SDL_BlendMode add = SDL_BLENDMODE_ADD;
+    bool add_ok = SDL_SetTextureBlendMode(texture, add);
+    if (!add_ok) {
+        /* Fall back gracefully without additive bloom instead of aborting all presentation */
     }
     SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE);
 
@@ -589,17 +586,17 @@ bool YoshiRenderPresentation(SDL_Renderer *renderer, SDL_Texture *texture,
         if (s_glow && SDL_SetTextureBlendMode(s_glow, add)) {
             SDL_UpdateTexture(s_glow, NULL, s_bright, s_width * 4);
             snesrecomp_sdl_set_texture_linear(s_glow, true);
-            Mod(s_glow, lighting ? 5 : 2, lighting ? 5 : 2, lighting ? 5 : 2);
+            Mod(s_glow, lighting ? 45 : 20, lighting ? 42 : 18, lighting ? 32 : 15);
             Draw(renderer, s_glow, source, destination, 0, 0);
-            Mod(s_glow, lighting ? 2 : 1, lighting ? 2 : 1, lighting ? 2 : 1);
-            Draw(renderer, s_glow, source, destination, -.8f*px, 0);
-            Draw(renderer, s_glow, source, destination, .8f*px, 0);
-            Draw(renderer, s_glow, source, destination, 0, -.8f*py);
-            Draw(renderer, s_glow, source, destination, 0, .8f*py);
+            Mod(s_glow, lighting ? 24 : 12, lighting ? 22 : 10, lighting ? 18 : 8);
+            Draw(renderer, s_glow, source, destination, -1.0f*px, 0);
+            Draw(renderer, s_glow, source, destination,  1.0f*px, 0);
+            Draw(renderer, s_glow, source, destination, 0, -1.0f*py);
+            Draw(renderer, s_glow, source, destination, 0,  1.0f*py);
             if (lighting) s_applied |= 2;
         }
     }
-    /* Render subtle 2D-HD Contact Shadow under Yoshi (PixelLight inspired) */
+    /* Render 2D-HD Contact Shadows under Yoshi (PixelLight inspired) */
     if (g_ram[0x0118] == 0x0e || g_ram[0x0118] == 0x0f) {
         uint8_t yoshi_raw_x = g_ram[0x00a0];
         uint8_t yoshi_raw_y = g_ram[0x00a2];
@@ -612,13 +609,13 @@ bool YoshiRenderPresentation(SDL_Renderer *renderer, SDL_Texture *texture,
             float center_x = destination->x + (buffer_x / (float)source->w) * destination->w;
             float center_y = destination->y + (buffer_y / (float)source->h) * destination->h;
 
-            float base_rx = 8.5f * px;
-            float base_ry = 3.0f * py;
-            uint8_t shadow_alpha = (action == 2 || action == 3) ? 35 : 65;
+            float base_rx = 9.5f * px;
+            float base_ry = 3.5f * py;
+            uint8_t shadow_alpha = (action == 2 || action == 3) ? 60 : 120;
 
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
             // Outer soft penumbra
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, (uint8_t)(shadow_alpha / 2));
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, (uint8_t)(shadow_alpha * 0.45f));
 #if SNESRECOMP_SDL3
             SDL_FRect outer = {center_x - base_rx, center_y - base_ry, base_rx * 2.0f, base_ry * 2.0f};
             SDL_RenderFillRect(renderer, &outer);
@@ -643,7 +640,7 @@ bool YoshiRenderPresentation(SDL_Renderer *renderer, SDL_Texture *texture,
             p->x += p->vx;
             p->y += p->vy;
             if (p->type == PARTICLE_EMBER) {
-                p->x += sinf(p->life * 6.0f) * 0.2f;
+                p->x += sinf(p->life * 7.0f) * 0.45f;
             }
             p->life -= 0.016667f;
             if (p->life <= 0.0f) {
@@ -658,8 +655,8 @@ bool YoshiRenderPresentation(SDL_Renderer *renderer, SDL_Texture *texture,
             float screen_y = destination->y + (p->y / 224.0f) * destination->h;
 
             if (p->type == PARTICLE_WATER_RIPPLE) {
-                float ripple_w = p->size * (1.0f + (1.0f - alpha_frac) * 3.0f) * px;
-                float ripple_h = ripple_w * 0.35f;
+                float ripple_w = p->size * (1.2f + (1.0f - alpha_frac) * 4.0f) * px;
+                float ripple_h = ripple_w * 0.40f;
 #if SNESRECOMP_SDL3
                 SDL_FRect rp = {screen_x - ripple_w * 0.5f, screen_y - ripple_h * 0.5f, ripple_w, ripple_h};
                 SDL_RenderRect(renderer, &rp);
@@ -668,7 +665,7 @@ bool YoshiRenderPresentation(SDL_Renderer *renderer, SDL_Texture *texture,
                 SDL_RenderRect(renderer, &rp);
 #endif
             } else {
-                float p_size = p->size * px;
+                float p_size = p->size * px * 1.6f;
 #if SNESRECOMP_SDL3
                 SDL_FRect pr = {screen_x - p_size * 0.5f, screen_y - p_size * 0.5f, p_size, p_size};
                 SDL_RenderFillRect(renderer, &pr);

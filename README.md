@@ -82,58 +82,97 @@
 
 ---
 
-## 📸 2. Comparativas Técnicas: Antes y Después
+## 📸 2. Comparativas Técnicas: Antes y Después (Juego Base vs Beta 3 Final)
 
-> *Nota: Todas las capturas mostradas a continuación han sido generadas por el arnés de pruebas automatizado de la Beta 3 (`tools/test_beta3_biomes.py`) para documentar objetivamente los algoritmos y mejoras visuales.*
+> *Nota: Todas las comparativas mostradas a continuación han sido capturadas en el motor nativo de la Beta 3, recortadas a las 208 líneas de exploración activas de SNES (eliminando por completo las franjas negras superior e inferior) y presentadas estrictamente en formato de 2 columnas para contrastar el comportamiento del juego original frente a la remasterización final.*
 
-### A. Modos de Filtrado Visual e Iluminación (Misma Escena de Juego)
+### 1. Prólogo y Cinemáticas Narrativas (`SCENE_TYPE_D_STORYBOOK`)
+| JUEGO BASE (SNES Original 4:3 con Vacíos Negros) | BETA 3 FINAL (Encuadre Panorámico de Cuento Ilustrado 16-Bit) |
+| :---: | :---: |
+| ![Intro Juego Base](docs/captures/comparisons/01_intro_storybook_base.png) | ![Intro Beta 3 Final](docs/captures/comparisons/01_intro_storybook_beta3.png) |
+| *La cinemática original queda encerrada en un recuadro 4:3 con bandas negras vacías.* | *Composición extendida con textura de libro ilustrado en mosaico 16-bit sin barras negras.* |
 
-| 1. Sin Filtro (Píxeles Crudos 1×1) | 2. Con Suavizado Subpíxel (Soft CRT) | 3. Acabado Final "Island Cinema" (2D-HD) |
+---
+
+### 2. Mapa Mundial de la Isla Yoshi (`SCENE_TYPE_C_MAP`)
+| JUEGO BASE (SNES Original 4:3 Limitado) | BETA 3 FINAL (Extensión Continua de Océano y Pergamino) |
+| :---: | :---: |
+| ![Mapa Base](docs/captures/comparisons/02_world_map_base.png) | ![Mapa Beta 3 Final](docs/captures/comparisons/02_world_map_beta3.png) |
+| *El mapa de la isla queda acotado a los 256 píxeles centrales con columnas oscuras.* | *Transición panorámica fluida con mosaico de textura de pergamino oceánico de 16-bits.* |
+
+---
+
+### 3. Praderas y Colinas (Mundo 1-1, `SCENE_TYPE_A_WIDESCREEN`)
+| JUEGO BASE (SNES Original 4:3, 256×208 Píxeles) | BETA 3 FINAL (Widescreen 16:9 Panorámico Real, 370×208 Píxeles) |
+| :---: | :---: |
+| ![Praderas Base](docs/captures/comparisons/03_grasslands_1_1_base.png) | ![Praderas Beta 3 Final](docs/captures/comparisons/03_grasslands_1_1_beta3.png) |
+| *Campo visual estrecho; enemigos y plataformas aparecen súbitamente al avanzar.* | *Amplitud visual panorámica completa con tilesets originales de colinas y nubes sin pop-in.* |
+
+---
+
+### 4. Gameplay de Acción en Colinas (Mundo 1-2, Yoshi y Bebé Mario)
+| JUEGO BASE (Píxeles Crudos Planos, Sin Sombras ni Partículas) | BETA 3 FINAL (Remaster 2D-HD Island Cinema con Sombra y Polvo) |
+| :---: | :---: |
+| ![Accion Base](docs/captures/comparisons/04_gameplay_action_1_2_base.png) | ![Accion Beta 3 Final](docs/captures/comparisons/04_gameplay_action_1_2_beta3.png) |
+| *Renderizado plano tradicional; Yoshi flota visualmente sobre el escenario.* | *Sombra de contacto oscura bajo los pies, partículas de polvo al correr/saltar y bloom.* |
+
+---
+
+### 5. Caverna Subterránea con Chomp Rock (Mundo 1-2)
+| JUEGO BASE (Paleta Plana Convencional de SNES) | BETA 3 FINAL (Iluminación Fría de Caverna y Sombra de Contacto) |
+| :---: | :---: |
+| ![Caverna Base](docs/captures/comparisons/05_cave_underground_1_2_base.png) | ![Caverna Beta 3 Final](docs/captures/comparisons/05_cave_underground_1_2_beta3.png) |
+| *Misma tonalidad cálida superficial aplicada dentro de las grutas subterráneas.* | *Iluminación fría de cueva (228, 232, 246), mayor contraste y sombra anclada bajo la roca.* |
+
+---
+
+### 6. Batalla contra Jefe: Burt the Bashful (Mundo 1-4, `SCENE_TYPE_B_BOSS`)
+| JUEGO BASE (4:3 Nativo Central) | BETA 3 FINAL (Arena Centrada con Mosaico de Ladrillos 16-Bit) |
+| :---: | :---: |
+| ![Jefe Base](docs/captures/comparisons/06_boss_burt_1_4_base.png) | ![Jefe Beta 3 Final](docs/captures/comparisons/06_boss_burt_1_4_beta3.png) |
+| *El formato 4:3 introduce franjas negras vacías en pantallas modernas.* | *Burt 100% íntegro en el centro; pilares laterales en mosaico de piedra 16-bit sin cortes ni fantasmas.* |
+
+---
+
+### 7. Selva Tropical y Palmeras (Mundo 3-1)
+| JUEGO BASE (SNES Original 4:3 Estrecho) | BETA 3 FINAL (Widescreen 16:9 con Iluminación Solar Tropical) |
+| :---: | :---: |
+| ![Selva Base](docs/captures/comparisons/07_jungle_tropics_3_1_base.png) | ![Selva Beta 3 Final](docs/captures/comparisons/07_jungle_tropics_3_1_beta3.png) |
+| *Vegetación densa comprimida en 256 píxeles con iluminación plana.* | *Extensión de dosel selvático en 16:9 con tonalidad solar tropical (248, 255, 242).* |
+
+---
+
+### 8. Entorno Acuático y Lagos (Mundo 3-7)
+| JUEGO BASE (Superficie de Agua Estática) | BETA 3 FINAL (Ondas Concéntricas y Salpicaduras de Agua) |
+| :---: | :---: |
+| ![Agua Base](docs/captures/comparisons/08_water_lake_3_7_base.png) | ![Agua Beta 3 Final](docs/captures/comparisons/08_water_lake_3_7_beta3.png) |
+| *El agua carece de interactividad física con Yoshi o las criaturas acuáticas.* | *Partículas de ondas expansivas en el agua y salpicaduras reactivas a los movimientos.* |
+
+---
+
+### 9. Cumbres Nevadas y Ventisca Alpina (Mundo 5-1)
+| JUEGO BASE (Blanco Plano Sin Profundidad) | BETA 3 FINAL (Contraste Alpino Invernal y Copos de Nieve Flotantes) |
+| :---: | :---: |
+| ![Nieve Base](docs/captures/comparisons/09_snow_summit_5_1_base.png) | ![Nieve Beta 3 Final](docs/captures/comparisons/09_snow_summit_5_1_beta3.png) |
+| *Nieve deslumbrante que quema los detalles de los personajes y el fondo.* | *Protección de blancos, tono frío (240, 246, 255) y partículas deterministas de ventisca.* |
+
+---
+
+### 10. Castillo de Bowser y Fosos de Lava (Mundo 6-8)
+| JUEGO BASE (Lava Estándar Convencional) | BETA 3 FINAL (Resplandor Radiante Ígneo y Ascuas Flotantes) |
+| :---: | :---: |
+| ![Lava Base](docs/captures/comparisons/10_castle_lava_6_8_base.png) | ![Lava Beta 3 Final](docs/captures/comparisons/10_castle_lava_6_8_beta3.png) |
+| *La lava se dibuja como un bloque naranja plano sin emisión de calor ni luz.* | *Iluminación ambiental ígnea (245, 218, 212), bloom emisivo sobre el magma y ascuas flotantes.* |
+
+---
+
+### E. Modos de Filtrado Visual e Iluminación (Gameplay Activo, Nivel 1-2)
+
+| 1. Píxeles Crudos (Sharp 1×1) | 2. Suavizado Subpíxel (Soft CRT) | 3. Acabado Final "Island Cinema" (2D-HD) |
 | :---: | :---: | :---: |
-| ![Sin Filtro Sharp](docs/captures/sharp.png) | ![Filtro Soft Subpixel](docs/captures/soft.png) | ![Preset Island Cinema 2D-HD](docs/captures/lighting.png) |
-| *Píxel art crudo escalado directamente sin filtrado (bordes pixelados duros).* | *Suavizado horizontal subpíxel 0.10/0.80/0.10 emulando la caída del fósforo CRT.* | *Iluminación contextual 2D-HD, sombras de contacto, partículas y bloom térmico.* |
+| ![Preset Sharp](docs/captures/sharp.png) | ![Preset Soft](docs/captures/soft.png) | ![Preset Lighting 2D-HD](docs/captures/lighting.png) |
+| *Píxel art puro sin filtrado (bordes duros 1:1).* | *Suavizado horizontal subpíxel 0.10/0.80/0.10 emulando fósforo CRT.* | *Iluminación contextual por bioma, sombras de contacto, polvo y bloom.* |
 
----
-
-### B. Formato de Pantalla: 4:3 Tradicional vs Panorámico Nativo
-
-| Formato Original SNES (4:3 con Barras Negras) | Formato Panorámico Nativo Extendido (16:9 / 20:9) |
-| :---: | :---: |
-| ![Original 4:3](docs/captures/level1_2_entry_native.png) | ![Panorámico Nativo](docs/captures/level1_2_action_wide_fixed.png) |
-| *Resolución original de 256×224 píxeles obligando a pilares negros laterales.* | *Resolución panorámica real de 342×224 píxeles renderizando geometría auténtica.* |
-
----
-
-### C. Batallas contra Jefes: Encuadre 4:3 vs Arena Panorámica
-
-| Arena de Jefe en 4:3 (Original) | Arena de Jefe Panorámica Extendida (Mejorada) |
-| :---: | :---: |
-| ![Jefe 4:3](docs/captures/boss_arena_right_native.png) | ![Jefe Widescreen](docs/captures/boss_arena_right_wide_x128.png) |
-| *El marco original limita la visibilidad horizontal durante la batalla.* | *Composición extendida que muestra la arena completa sin romper el gameplay.* |
-
----
-
-### D. Galería de Entornos 16-Bits en Widescreen Nativo
-
-Verificación técnica de la extensión gráfica en los distintos biomas del juego (sin costuras, parpadeos ni bordes negros accidentales):
-
-| 🌿 Praderas y Colinas (Mundo 1-1) | 🪨 Caverna Subterránea con Chomp Rock (Mundo 1-2) |
-| :---: | :---: |
-| ![Praderas 20:9](docs/captures/fullscreen_420x224_after_move.png) | ![Caverna Chomp Rock](docs/captures/level1_2_chomp_wide_fixed.png) |
-
-| 🌴 Jungla y Bosque Tropical (Mundo 3-1) | 💧 Lagos y Agua (Mundo 3-7) |
-| :---: | :---: |
-| ![Jungla](docs/captures/level3_1_fixed_wide.png) | ![Agua y Lago](docs/captures/level3_7_wide_9380.png) |
-
-| ❄️ Montaña y Cumbres Nevadas (Mundo 5-1 / 5-2) | 🌋 Castillo de Bowser y Lava (Mundo 6-8) |
-| :---: | :---: |
-| ![Nieve](docs/captures/level5_1_wide_9380.png) | ![Castillo Lava](docs/captures/level6_8_wide_9340.png) |
-
-| ⭐ Nivel Extra Secreto (Extra 1) | 🍄 Nivel Extra Avanzado (Extra 6) |
-| :---: | :---: |
-| ![Nivel Extra 1](docs/captures/extra_1_wide_9340.png) | ![Nivel Extra 6](docs/captures/extra_6_wide_9340.png) |
-
----
 
 ## 🛠️ 3. Estructura del Repositorio
 

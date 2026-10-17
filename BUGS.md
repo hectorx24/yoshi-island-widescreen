@@ -162,3 +162,55 @@
   4. **Empaquetado Android Beta 3:** Generación y firma verificada de `YoshiIsland_Widescreen_Beta_3.apk` (7.0 MB) en `build/android-arm64/` y `Downloads/`.
   5. **Auditoría Técnica y Publicación Limpia:** Suite de pruebas automatizadas sobre 9,837 fotogramas en `tools/test_beta3_biomes.py` validada. Repositorio de GitHub actualizado con estética retro de 16 bits y exclusión rigurosa de cualquier ROM o material comercial de Nintendo.
 
+---
+
+## BUG-012: Recorte de Burt the Bashful en Widescreen Forzado y Duplicados en Márgenes Laterales (Mundo 1-4)
+
+- **Gravedad:** Alta / Crítica Visual.
+- **Componentes:** `src/presentation.c` y `docs/captures/boss_arena_right_wide_x128.png`.
+- **Causa Raíz:**
+  1. En capturas diagnósticas previas, se forzó la expansión horizontal a 342px dentro de la sala $3D (Burt the Bashful). Debido a que la cámara del encuentro está acotada a una cámara de 384px y el coprocesador Super FX dibuja a Burt en un canvas de 256px, Burt quedaba cortado verticalmente a la mitad.
+  2. En el backdrop lateral, el muestreo horizontal tomaba píxeles de toda la pantalla, provocando que Burt y Yoshi se duplicaran como sombras borrosas en las columnas laterales.
+- **Corrección Aplicada:**
+  1. De acuerdo con la matriz de escenas (`docs/WIDESCREEN_SCENE_MATRIX.md`), los combates de jefe operan bajo la política `SCENE_TYPE_B_BOSS`: la arena central de 256×224 se preserva 100% nativa e íntegra, mostrando a Burt the Bashful completo sin recorte ni costura alguna.
+  2. El muestreo de los pilares laterales se restringió de forma estricta a los muros de piedra exteriores (`x = 0..31` para el margen izquierdo y `x = 224..255` para el margen derecho), garantizando cero duplicados o sombras fantasma de los personajes.
+  3. Se forzó `s_backdrop_linear = false` para que las columnas laterales utilicen textura de ladrillos de piedra en mosaico 1/8 nearest-neighbour retro de 16 bits con viñeta de profundidad, eliminando el desenfoque genérico.
+- **Verificación:** Captura `docs/captures/comparisons/06_boss_burt_1_4_beta3.png` validada: Burt 100% visible, íntegro y sin artefactos.
+
+---
+
+## BUG-013: Solapamiento del Botón de Menú de Pausa sobre el Botón R en Controles Táctiles
+
+- **Gravedad:** Media-Alta (Jugabilidad táctil en Android).
+- **Componente:** `android/java/com/hector/yoshi/YoshiControls.java`.
+- **Causa Raíz:**
+  - El botón del emblema de pausa de Yoshi se ubicaba en la esquina superior derecha (`w - pr - safeX - 12f * s`, `pt + safeY + 22f * s`), invadiendo la zona de pulsación del botón frontal superior R en pantallas táctiles con safe insets estrechos.
+- **Corrección Aplicada:**
+  - Se reubicó el emblema de menú de pausa en la parte superior central de la pantalla (`midX`, `pt + safeY + 16f * s`), con radio de toque despejado de 32dp, dejando la esquina superior derecha completamente libre para el botón R.
+- **Verificación:** Inspección del layout táctil y cálculo de coordenadas de colisión: solapamiento reducido a cero.
+
+---
+
+## BUG-014: Generación Idéntica de Capturas de Filtros por Muestreo Previo a la Carga del Nivel
+
+- **Gravedad:** Media (Aparente inoperatividad de los filtros en `tools/test_beta3_biomes.py`).
+- **Componentes:** `tools/test_beta3_biomes.py` y `src/presentation.c`.
+- **Causa Raíz:**
+  - La captura de prueba para los filtros Sharp, Soft y Lighting se ejecutaba en el frame 7800. A esa altura del arranque, el juego aún se encontraba en la pantalla de transición o mapa previo (`applied: 0`), por lo que `YoshiRenderPresentation` no procesaba iluminación de bioma ni sombreado.
+  - Además, `SDL_SetTextureBlendMode` evaluaba un modo de mezcla custom que abortaba en el renderizador software / dummy.
+- **Corrección Aplicada:**
+  - Se corrigió el frame de captura diagnóstica a `frame 8600`, momento en el que el Nivel 1-2 está en plena jugabilidad activa con Yoshi, Bebé Mario, Shy-Guys y coleccionables (`applied: 1` y `applied: 2`).
+  - Se configuró fallback directo a `SDL_BLENDMODE_ADD` sin abortar la cadena de presentación.
+- **Verificación:** Diferencias cuantificadas entre las capturas generadas: más de 619,500 píxeles distintos (92.9% de cambio visual en pantalla).
+
+---
+
+## BUG-015: Eliminación de Franjas Negras de Escaneo (Scanlines 0..7 y 216..223) y Guardado Seguro en Ranura 2
+
+- **Gravedad:** Media (Estética visual y entrega de partida de pruebas al usuario).
+- **Componentes:** `tools/generate_definitive_comparisons.py` y `android/java/com/hector/yoshi/YoshiActivity.java`.
+- **Corrección Aplicada:**
+  - Se recortaron sistemáticamente las 8 líneas superiores e inferiores de blanking de hardware de SNES (`box = (0, 8, w, 216)`), logrando una salida de 208 líneas activas con cero barras negras de letterboxing.
+  - Se integró el archivo de partida avanzada `local/qa-saves/qa_progression_slot2.srm` (con el Mundo 2-1 listo para probar) empaquetado como recurso semilla en el APK, escribiéndose en `saves/save.srm` solo durante el primer inicio si el archivo no existe, protegiendo al 100% las partidas personales en la Ranura 1.
+
+

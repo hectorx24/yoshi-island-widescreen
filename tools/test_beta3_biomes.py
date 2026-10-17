@@ -89,7 +89,7 @@ def main():
                SNESRECOMP_DUMP_DIR=str(args.output.resolve()),
                SNESRECOMP_PRESENT_TEST_CYCLE='1',
                SNESRECOMP_PRESENT_CAPTURE=str((args.output / 'beta3_cycle').resolve()),
-               SNESRECOMP_PRESENT_FRAME='7800')
+               SNESRECOMP_PRESENT_FRAME='8600')
                
     subprocess.run([
         str(exe.resolve()),

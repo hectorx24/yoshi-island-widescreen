@@ -171,10 +171,10 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
         l.btnStart_x = midX + 44f * s;
         l.btnStart_y = h - pb - safeY - 16f * s;
 
-        // Top-right pause menu button
+        // Top-center pause menu button (discreet emblem, no collision with R shoulder)
         l.menuRadius = 18f * s;
-        l.menuX = w - pr - safeX - 12f * s;
-        l.menuY = pt + safeY + 22f * s;
+        l.menuX = midX;
+        l.menuY = pt + safeY + 16f * s;
 
         return l;
     }
