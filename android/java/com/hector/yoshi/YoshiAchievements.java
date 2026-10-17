@@ -38,29 +38,28 @@ final class YoshiAchievements {
         int pad = (int)(16 * owner.getResources().getDisplayMetrics().density);
         content.setPadding(pad, 0, pad, 0);
         final EditText username = new EditText(owner);
-        username.setHint("RetroAchievements username");
+        username.setHint("Usuario de RetroAchievements");
         username.setSingleLine(true);
         username.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
         final EditText password = new EditText(owner);
-        password.setHint("Password (this session only)");
+        password.setHint("Contraseña (solo esta sesión)");
         password.setSingleLine(true);
         password.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         content.addView(username); content.addView(password);
-        new AlertDialog.Builder(owner).setTitle("RetroAchievements — softcore")
-            .setMessage(status() + "\n\nOptional. Credentials are not saved. Offline play is always available. " +
-                "Pending submissions survive connection loss only while this session remains open.")
+        new AlertDialog.Builder(owner).setTitle("RetroAchievements — Softcore")
+            .setMessage(status() + "\n\nOpcional. Las credenciales no se guardan en el dispositivo. Puedes jugar sin conexión en cualquier momento. Los logros pendientes se sincronizarán al reconectar durante la sesión actual.")
             .setView(content)
-            .setPositiveButton("Log in", new DialogInterface.OnClickListener() {
+            .setPositiveButton("Iniciar sesión", new DialogInterface.OnClickListener() {
                 @Override public void onClick(DialogInterface dialog, int which) {
                     String name = username.getText().toString().trim();
                     String secret = password.getText().toString();
                     if (!name.isEmpty() && !secret.isEmpty()) login(name, secret);
-                    else Toast.makeText(owner, "Enter both username and password", Toast.LENGTH_SHORT).show();
+                    else Toast.makeText(owner, "Introduce usuario y contraseña", Toast.LENGTH_SHORT).show();
                     password.getText().clear();
                 }})
-            .setNeutralButton("Log out", new DialogInterface.OnClickListener() {
+            .setNeutralButton("Cerrar sesión", new DialogInterface.OnClickListener() {
                 @Override public void onClick(DialogInterface dialog, int which) { logout(); password.getText().clear(); }
-            }).setNegativeButton("Back", null).show();
+            }).setNegativeButton("Volver", null).show();
     }
     // Invoked by native code. Responses are queued for the simulation thread.
     static void dispatch(final long id, final String url, final String post, final String contentType) {

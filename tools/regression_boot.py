@@ -28,7 +28,7 @@ def main():
     for tag in expected['captures']:
         (output/(tag+'.fb.bgrx')).unlink(missing_ok=True)
     env=dict(os.environ,SDL_VIDEODRIVER='dummy',SDL_AUDIODRIVER='dummy',
-             SNESRECOMP_DUMP_DIR=str(output))
+             SNESRECOMP_DUMP_DIR=str(output),SNESRECOMP_LANG='en')
     with (output/'run.log').open('w') as log:
         subprocess.run([str(args.executable.resolve()),'--no-launcher','--rom',str(args.rom.resolve()),
                         '--script',str(root/'tests/boot.script')],env=env,

@@ -9,3 +9,4 @@ build/
 __pycache__/
 *.apk
 *.keystore
+last_run_report.json

@@ -24,3 +24,19 @@ if(_yoshi_present_at EQUAL -1)
     _yoshi_present_source "${_yoshi_present_source}")
   file(WRITE "${_yoshi_present_host}" "${_yoshi_present_source}")
 endif()
+
+string(FIND "${_yoshi_present_source}" "YoshiSetHostPaused" _yoshi_paused_at)
+if(_yoshi_paused_at EQUAL -1)
+  string(REPLACE "static void SetAudioPaused(bool paused) {"
+    "static void SetAudioPaused(bool paused);\nvoid YoshiSetHostPaused(bool paused) {\n  g_paused = (uint8)(paused ? 1 : 0);\n  SetAudioPaused(g_paused);\n}\nbool YoshiGetHostPaused(void) {\n  return g_paused != 0;\n}\nstatic void SetAudioPaused(bool paused) {"
+    _yoshi_present_source "${_yoshi_present_source}")
+  file(WRITE "${_yoshi_present_host}" "${_yoshi_present_source}")
+endif()
+
+string(FIND "${_yoshi_present_source}" "kPpuRenderFlags_NoSpriteLimits" _yoshi_nospr_at)
+if(_yoshi_nospr_at EQUAL -1)
+  string(REPLACE "if (g_ws_active) flags |= kPpuRenderFlags_NewRenderer;"
+    "if (g_ws_active) flags |= (kPpuRenderFlags_NewRenderer | kPpuRenderFlags_NoSpriteLimits);"
+    _yoshi_present_source "${_yoshi_present_source}")
+  file(WRITE "${_yoshi_present_host}" "${_yoshi_present_source}")
+endif()

@@ -112,8 +112,8 @@
 
 <!-- checkpoint:begin -->
 ## Automatic checkpoint
-- Checked 2026-10-16T23:34:43+00:00; Master plan completed: final signed release APK delivered to Puente_Transferencia and dinosaurio.zip updated with full session and code
-- Git base at checkpoint: d877236; 1 changed/untracked paths (run git status).
+- Checked 2026-10-17T01:46:16+00:00; Three boot framebuffer regression checkpoints passed
+- Git base at checkpoint: dd5f820; 26 changed/untracked paths (run git status).
 - Last supported quota observation (2026-10-15T20:53:30+00:00): five_hour: 0% remaining; weekly: 78% remaining.
 - LOW QUOTA: handoff saved; preserve WIP and precise next action before further expensive work.
 <!-- checkpoint:end -->

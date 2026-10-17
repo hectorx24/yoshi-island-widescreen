@@ -40,12 +40,9 @@ if (log_dir / 'transcript_full.jsonl').exists():
     shutil.copy2(log_dir / 'transcript_full.jsonl', ag_dir / 'transcript_full.jsonl')
 
 print("4. Copying master plan and root markdown files...", flush=True)
-if (root / 'MASTER_PLAN_ANTIGRAVITY.md').exists():
-    shutil.copy2(root / 'MASTER_PLAN_ANTIGRAVITY.md', staging / 'MASTER_PLAN_ANTIGRAVITY.md')
-if (root / 'PROJECT_STATUS.md').exists():
-    shutil.copy2(root / 'PROJECT_STATUS.md', staging / 'PROJECT_STATUS.md')
-if (root / 'ARCHITECTURAL_DESIGN_AND_TECHNICAL_SPEC.md').exists():
-    shutil.copy2(root / 'ARCHITECTURAL_DESIGN_AND_TECHNICAL_SPEC.md', staging / 'ARCHITECTURAL_DESIGN_AND_TECHNICAL_SPEC.md')
+for doc_file in ['MASTER_PLAN_ANTIGRAVITY.md', 'PLAN_MAESTRO_YOSHI_ISLAND_DEFINITIVO_V4.md', 'PROJECT_STATUS.md', 'BUGS.md', 'ARCHITECTURAL_DESIGN_AND_TECHNICAL_SPEC.md']:
+    if (root / doc_file).exists():
+        shutil.copy2(root / doc_file, staging / doc_file)
 
 print("5. Copying source_code...", flush=True)
 source_dest = staging / 'source_code'
@@ -74,9 +71,11 @@ with zipfile.ZipFile(out_zip_tmp, 'w', compression=zipfile.ZIP_DEFLATED) as z:
             rel = full.relative_to(staging)
             z.write(full, rel)
 
-print("7. Moving to destination in Puente_Transferencia...", flush=True)
+print("7. Moving to destination in Puente_Transferencia and Downloads...", flush=True)
 shutil.copy2(out_zip_tmp, target_zip)
 shutil.copy2(out_zip_tmp, zips_zip)
+downloads_zip = Path('/Users/hectorx24/Downloads/dinosaurio.zip')
+shutil.copy2(out_zip_tmp, downloads_zip)
 out_zip_tmp.unlink()
 shutil.rmtree(staging)
 

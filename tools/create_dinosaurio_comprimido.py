@@ -34,7 +34,7 @@ if source_dinosaurio.exists():
                 pass
 
 print("2. Copying executive summaries and master plans...", flush=True)
-for fname in ['RESUMEN_EJECUTIVO_CHATGPT.md', 'MASTER_PLAN_ANTIGRAVITY.md', 'PROJECT_STATUS.md']:
+for fname in ['RESUMEN_EJECUTIVO_CHATGPT.md', 'MASTER_PLAN_ANTIGRAVITY.md', 'PLAN_MAESTRO_YOSHI_ISLAND_DEFINITIVO_V4.md', 'PROJECT_STATUS.md', 'BUGS.md']:
     p = root / fname
     if p.exists():
         shutil.copy2(p, staging / fname)
@@ -113,10 +113,12 @@ with zipfile.ZipFile(tmp_zip, 'w', compression=zipfile.ZIP_DEFLATED, compresslev
 size_mb = tmp_zip.stat().st_size / (1024 * 1024)
 print(f"Compressed zip created: {size_mb:.2f} MB", flush=True)
 
-print("7. Moving to Puente_Transferencia...", flush=True)
+print("7. Moving to Puente_Transferencia and Downloads...", flush=True)
 shutil.copy2(tmp_zip, target_zip)
 shutil.copy2(tmp_zip, target_zips_zip)
+downloads_zip = Path('/Users/hectorx24/Downloads/dinosaurio_comprimido.zip')
+shutil.copy2(tmp_zip, downloads_zip)
 tmp_zip.unlink()
 shutil.rmtree(staging)
 
-print(f"SUCCESS: dinosaurio_comprimido.zip placed in Puente_Transferencia ({size_mb:.2f} MB)", flush=True)
+print(f"SUCCESS: dinosaurio_comprimido.zip placed in Puente_Transferencia and Downloads ({size_mb:.2f} MB)", flush=True)

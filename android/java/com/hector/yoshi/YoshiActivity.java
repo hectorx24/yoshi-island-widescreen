@@ -12,6 +12,10 @@ import java.io.*;
 public final class YoshiActivity extends SDLActivity {
     private YoshiControls controls;
     static native void configurePresentation(int soft, boolean lighting);
+    static native void setGamePaused(boolean paused);
+    static native boolean isGamePaused();
+    static native void setSpanish(boolean enabled);
+    static native boolean isSpanish();
     @Override protected String[] getLibraries() { return new String[]{"SDL3", "YoshiIsland"}; }
     private String regressionScript() {
         if (getIntent().getBooleanExtra("castle_test", false)) return "castle_diagnostic.script";
@@ -20,8 +24,10 @@ public final class YoshiActivity extends SDLActivity {
     }
     @Override protected String[] getArguments() {
         android.content.SharedPreferences options = getSharedPreferences("yoshi-options", MODE_PRIVATE);
-        int soft = options.getInt("display", 0);
-        boolean lighting = options.getBoolean("lighting", false);
+        int soft = options.getInt("display", 1);
+        boolean lighting = options.getBoolean("lighting", true);
+        boolean spanish = options.getBoolean("spanish", true);
+        nativeSetenv("SNESRECOMP_LANG", spanish ? "es" : "en");
         if (getIntent().getBooleanExtra("display_test", false)) {
             soft = 0; lighting = false;
             nativeSetenv("SNESRECOMP_PRESENT_TEST_CYCLE", "1");
@@ -113,6 +119,7 @@ public final class YoshiActivity extends SDLActivity {
             return;
         }
         super.onCreate(state);
+        YoshiHaptics.init(this);
         if (!getIntent().getBooleanExtra("regression", false)) {
             controls = new YoshiControls(this);
             mLayout.addView(controls, new RelativeLayout.LayoutParams(
@@ -150,6 +157,12 @@ public final class YoshiActivity extends SDLActivity {
     @Override public void onWindowFocusChanged(boolean focused) {
         super.onWindowFocusChanged(focused);
         if (focused) immersive();
+    }
+    @Override public void onConfigurationChanged(android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        immersive();
+        View content = findViewById(android.R.id.content);
+        if (content != null) content.requestApplyInsets();
     }
     @Override protected void onPause() {
         if (controls != null) controls.releaseAll();

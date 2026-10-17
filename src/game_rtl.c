@@ -43,6 +43,7 @@
 #include "snes/snes.h"
 #include "snes/superfx.h"
 #include "snes/ws_shadow.h"
+#include "yoshi_spanish.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -738,6 +739,8 @@ static void BlackUnverifiedMargins(const Ppu *ppu, unsigned line, void *context)
     for (int sx = -ppu->extraLeftCur; sx < 256 + ppu->extraRightCur; ++sx) {
         if (sx >= 0 && sx < 256) continue;
         if (!valid || (x + sx < 0 && !s_boundary_extension) || x + sx >= 4096) {
+            if ((ppu->objBuffer.data[sx + ppu->extraLeftRight] & 0xff) != 0)
+                continue;
             uint8_t *pixel = row + (sx + ppu->extraLeftRight) * 4;
             pixel[0] = pixel[1] = pixel[2] = 0;
         }
@@ -1045,9 +1048,70 @@ static void AuditShadowTiles(unsigned number)
     fclose(file);
 }
 
+#ifdef __ANDROID__
+#include "desktop/sdl_compat.h"
+#include <jni.h>
+
+static uint8_t s_prev_action = 0;
+static uint8_t s_prev_yspeed = 0;
+static uint8_t s_prev_separated = 0;
+static uint8_t s_prev_egg = 0;
+static unsigned s_last_rain_frame = 0;
+
+static void YoshiTriggerAndroidHaptic(int event_id) {
+    JNIEnv *env = SDL_GetAndroidJNIEnv();
+    if (!env) return;
+    static jclass s_haptics_class = NULL;
+    static jmethodID s_haptics_method = NULL;
+    if (!s_haptics_class) {
+        jclass local = (*env)->FindClass(env, "com/hector/yoshi/YoshiHaptics");
+        if (local) {
+            s_haptics_class = (*env)->NewGlobalRef(env, local);
+            (*env)->DeleteLocalRef(env, local);
+            s_haptics_method = (*env)->GetStaticMethodID(env, s_haptics_class, "onNativeHaptic", "(I)V");
+        }
+    }
+    if (s_haptics_class && s_haptics_method) {
+        (*env)->CallStaticVoidMethod(env, s_haptics_class, s_haptics_method, (jint)event_id);
+    }
+}
+
+static void YoshiCheckHaptics(unsigned frame_number) {
+    uint8_t mode = g_ram[0x0118];
+    if (mode != 0x0e && mode != 0x0f) return;
+
+    uint8_t action = g_ram[0x0378];
+    uint8_t yspeed = g_ram[0x0388];
+    uint8_t separated = g_ram[0x03b6];
+    uint8_t egg = g_ram[0x03ac];
+    uint8_t weather = g_ram[0x03d2];
+
+    if ((action == 2 || action == 3) && (s_prev_action != 2 && s_prev_action != 3)) {
+        YoshiTriggerAndroidHaptic(1); /* EVENT_JUMP */
+    } else if (s_prev_egg != 0 && egg == 0 && action != 0x14) {
+        YoshiTriggerAndroidHaptic(2); /* EVENT_EGG */
+    } else if (s_prev_yspeed > 2 && yspeed == 0 && action == 0) {
+        YoshiTriggerAndroidHaptic(3); /* EVENT_LANDING */
+    } else if (separated > 0 && s_prev_separated == 0) {
+        YoshiTriggerAndroidHaptic(5); /* EVENT_DAMAGE */
+    } else if (weather != 0 && (frame_number - s_last_rain_frame) >= 60) {
+        s_last_rain_frame = frame_number;
+        YoshiTriggerAndroidHaptic(7); /* EVENT_RAIN */
+    }
+
+    s_prev_action = action;
+    s_prev_yspeed = yspeed;
+    s_prev_separated = separated;
+    s_prev_egg = egg;
+}
+#endif
+
 void GameEndFrame(const uint8_t *field, unsigned number)
 {
     YoshiAchievementsEnd();
+#ifdef __ANDROID__
+    YoshiCheckHaptics(number);
+#endif
     const char *directory = getenv("SNESRECOMP_WS_FRAME_DIR");
     if (directory && AuditFrameSelected(getenv("SNESRECOMP_WS_FRAME_NUMBERS"), number)) {
         char path[4096];
@@ -1135,9 +1199,16 @@ void GameSessionReset(void)
     WsShadowReset();
 }
 
+static void GameInitialize(void)
+{
+    if (g_snes && g_snes->cart && g_snes->cart->rom) {
+        YoshiApplySpanishTranslation(g_snes->cart->rom, g_snes->cart->romSize);
+    }
+}
+
 const RtlGameInfo kGameInfo = {
     .title = "yoshi-island-usa11",
-    .initialize = NULL,
+    .initialize = &GameInitialize,
     .run_frame = &GameRunOneFrame,
     .draw_ppu_frame = &GameDrawPpuFrame,
     .save_name_prefix = "save",
