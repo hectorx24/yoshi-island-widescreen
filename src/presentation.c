@@ -34,10 +34,52 @@ static SDL_Texture *s_backdrop_texture;
 static SDL_Renderer *s_backdrop_renderer;
 extern uint8_t g_ram[0x20000];
 
+#define MAX_VISUAL_PARTICLES 32
+typedef struct {
+    float x, y;
+    float vx, vy;
+    float life, max_life;
+    uint8_t r, g, b, a;
+    float size;
+    bool active;
+} VisualParticle;
+
+static VisualParticle s_particles[MAX_VISUAL_PARTICLES];
+static uint32_t s_visual_rng = 0x1337BEEF;
+static uint8_t s_prev_action = 0;
+static uint8_t s_prev_yspeed = 0;
+static unsigned s_particle_frame = 0;
+
+static inline float VisualRand(void) {
+    s_visual_rng = s_visual_rng * 1664525u + 1013904223u;
+    return (float)(s_visual_rng & 0xFFFF) / 65535.0f;
+}
+
+static void SpawnParticle(float x, float y, float vx, float vy, float life,
+                          uint8_t r, uint8_t g, uint8_t b, uint8_t a, float size) {
+    for (int i = 0; i < MAX_VISUAL_PARTICLES; ++i) {
+        if (!s_particles[i].active) {
+            s_particles[i].x = x;
+            s_particles[i].y = y;
+            s_particles[i].vx = vx;
+            s_particles[i].vy = vy;
+            s_particles[i].life = life;
+            s_particles[i].max_life = life;
+            s_particles[i].r = r;
+            s_particles[i].g = g;
+            s_particles[i].b = b;
+            s_particles[i].a = a;
+            s_particles[i].size = size;
+            s_particles[i].active = true;
+            break;
+        }
+    }
+}
+
 /* Scene Policy:
  * Type B: 12 Boss Arenas - nearest-neighbour ~1/8 mosaic of level palette with edge dark vignette (no HUD/boss ghost).
  * Type C: World Map - seamless parchment/ocean pastel extension matching scroll texture (NO blurred full-screen copy).
- * Type D: Storybook/Intro - warm illustrated storybook margin extension.
+ * Type D: Storybook/Intro/Title - warm illustrated storybook margin extension with vertical gradient tracking.
  * Type E: System screens - clean native black pillars. */
 static void GenerateSceneBackdrop(const uint8_t *field, int width, int height, YoshiSceneType scene) {
     if (width != 256 || height != 224 || !field || scene == SCENE_TYPE_E_SYSTEM) {
@@ -127,31 +169,48 @@ static void GenerateSceneBackdrop(const uint8_t *field, int width, int height, Y
         s_backdrop_linear = true;
         s_backdrop_ready = true;
     } else if (scene == SCENE_TYPE_D_STORYBOOK) {
-        /* Storybook intro: Warm antique illustrated picture book framing. */
-        uint32_t edge_b = 0, edge_g = 0, edge_r = 0, count = 0;
-        for (int y = 20; y < 200; ++y) {
+        /* Storybook intro / Title / Cinematic / Menus: Warm illustrated margin extension.
+         * Samples left and right edges per row to follow vertical color transitions (sky, hills, floor). */
+        uint32_t total_b = 0, total_g = 0, total_r = 0, total_n = 0;
+        for (int y = 16; y < 208; y += 4) {
             const uint8_t *l = field + (y * 256 + 16) * 4;
             const uint8_t *r = field + (y * 256 + 239) * 4;
-            if ((unsigned)l[0] + l[1] + l[2] > 30) {
-                edge_b += l[0]; edge_g += l[1]; edge_r += l[2]; count++;
+            if ((unsigned)l[0] + l[1] + l[2] > 20) {
+                total_b += l[0]; total_g += l[1]; total_r += l[2]; total_n++;
             }
-            if ((unsigned)r[0] + r[1] + r[2] > 30) {
-                edge_b += r[0]; edge_g += r[1]; edge_r += r[2]; count++;
+            if ((unsigned)r[0] + r[1] + r[2] > 20) {
+                total_b += r[0]; total_g += r[1]; total_r += r[2]; total_n++;
             }
         }
-        uint8_t avg_b = count ? (uint8_t)(edge_b / count) : 48;
-        uint8_t avg_g = count ? (uint8_t)(edge_g / count) : 36;
-        uint8_t avg_r = count ? (uint8_t)(edge_r / count) : 58;
+        const uint8_t fallback_b = total_n ? (uint8_t)(total_b / total_n) : 48;
+        const uint8_t fallback_g = total_n ? (uint8_t)(total_g / total_n) : 36;
+        const uint8_t fallback_r = total_n ? (uint8_t)(total_r / total_n) : 58;
 
         for (int by = 0; by < 28; ++by) {
+            uint32_t row_b = 0, row_g = 0, row_r = 0, row_n = 0;
+            const int sample_y = by * 8 + 4;
+            for (int dx = 12; dx <= 24; dx += 6) {
+                const uint8_t *l = field + (sample_y * 256 + dx) * 4;
+                const uint8_t *r = field + (sample_y * 256 + (255 - dx)) * 4;
+                if ((unsigned)l[0] + l[1] + l[2] > 24) {
+                    row_b += l[0]; row_g += l[1]; row_r += l[2]; row_n++;
+                }
+                if ((unsigned)r[0] + r[1] + r[2] > 24) {
+                    row_b += r[0]; row_g += r[1]; row_r += r[2]; row_n++;
+                }
+            }
+            const uint8_t cur_b = row_n ? (uint8_t)(row_b / row_n) : fallback_b;
+            const uint8_t cur_g = row_n ? (uint8_t)(row_g / row_n) : fallback_g;
+            const uint8_t cur_r = row_n ? (uint8_t)(row_r / row_n) : fallback_r;
+
             for (int bx = 0; bx < 32; ++bx) {
                 const int out_idx = (by * 32 + bx) * 4;
                 float dist_edge = fabsf((float)bx - 15.5f) / 16.0f;
-                float fade = 1.0f - 0.35f * dist_edge;
+                float fade = 1.0f - 0.28f * dist_edge;
                 int wave = ((bx * 5 + by * 11) % 9) - 4;
-                int b = (int)((avg_b + wave) * fade);
-                int g = (int)((avg_g + wave) * fade);
-                int r = (int)((avg_r + wave) * fade);
+                int b = (int)((cur_b + wave) * fade);
+                int g = (int)((cur_g + wave) * fade);
+                int r = (int)((cur_r + wave) * fade);
                 s_backdrop_pixels[out_idx + 0] = (uint8_t)(b < 0 ? 0 : (b > 255 ? 255 : b));
                 s_backdrop_pixels[out_idx + 1] = (uint8_t)(g < 0 ? 0 : (g > 255 ? 255 : g));
                 s_backdrop_pixels[out_idx + 2] = (uint8_t)(r < 0 ? 0 : (r > 255 ? 255 : r));
@@ -237,12 +296,12 @@ int YoshiComposeFrame(uint8_t *dst, size_t pitch, const uint8_t *field,
         uint8_t mode = g_ram[0x0118];
         if (mode == 0x03 || mode == 0x04) {
             s_current_scene = SCENE_TYPE_C_MAP;
-        } else if (mode == 0x14 || mode == 0x01) {
+        } else if (mode == 0x14 || mode == 0x01 || mode == 0x00 || mode == 0x02 || mode == 0x05) {
             s_current_scene = SCENE_TYPE_D_STORYBOOK;
         } else if (mode == 0x0e || mode == 0x0f) {
             s_current_scene = SCENE_TYPE_B_BOSS;
         } else {
-            s_current_scene = SCENE_TYPE_E_SYSTEM;
+            s_current_scene = SCENE_TYPE_D_STORYBOOK;
         }
 
         if (!getenv("SNESRECOMP_NO_THEMED_FALLBACK")) {
@@ -258,22 +317,49 @@ int YoshiComposeFrame(uint8_t *dst, size_t pitch, const uint8_t *field,
         uint8_t lvl = g_ram[0x021a];
         /* Cave / Underground */
         if (lvl == 2 || lvl == 17 || lvl == 29 || lvl == 38 || lvl == 62) {
-            s_ambient[0] = 234; s_ambient[1] = 238; s_ambient[2] = 252;
+            s_ambient[0] = 228; s_ambient[1] = 232; s_ambient[2] = 246;
         }
         /* Castle / Fortress */
         else if (lvl == 3 || lvl == 7 || lvl == 15 || lvl == 19 || lvl == 27 ||
                  lvl == 31 || lvl == 39 || lvl == 43 || lvl == 51 || lvl == 55 ||
                  lvl == 63 || lvl == 67) {
-            s_ambient[0] = 230; s_ambient[1] = 226; s_ambient[2] = 234;
+            s_ambient[0] = 224; s_ambient[1] = 220; s_ambient[2] = 230;
         }
         /* Snow / Ice */
         else if (lvl == 48 || lvl == 49 || lvl == 50 || lvl == 65 || lvl == 66) {
-            s_ambient[0] = 238; s_ambient[1] = 246; s_ambient[2] = 255;
+            s_ambient[0] = 242; s_ambient[1] = 246; s_ambient[2] = 255;
         }
-        /* Twilight / Night / Volcano */
+        /* Forest / Jungle */
+        else if (lvl == 12 || lvl == 14 || lvl == 25 || lvl == 40) {
+            s_ambient[0] = 236; s_ambient[1] = 250; s_ambient[2] = 238;
+        }
+        /* Twilight / Night / Volcano / Lava */
         else if (lvl == 53 || lvl == 54 || lvl == 56 || lvl == 60) {
-            s_ambient[0] = 246; s_ambient[1] = 228; s_ambient[2] = 238;
+            s_ambient[0] = 255; s_ambient[1] = 238; s_ambient[2] = 224;
         }
+
+        /* Check game events for presentation particles */
+        s_particle_frame++;
+        uint8_t action = g_ram[0x0378];
+        uint8_t yspeed = g_ram[0x0388];
+
+        // Landing dust puff
+        if (s_prev_yspeed > 2 && yspeed == 0 && action == 0) {
+            float yx = (float)g_ram[0x00a0];
+            float yy = (float)g_ram[0x00a2] + 28.0f;
+            SpawnParticle(yx - 4.0f, yy, -0.6f, -0.3f, 0.35f, 220, 210, 190, 180, 2.0f);
+            SpawnParticle(yx + 4.0f, yy,  0.6f, -0.3f, 0.35f, 220, 210, 190, 180, 2.0f);
+        }
+
+        // Lava floating embers in volcanic scenes
+        if ((lvl == 53 || lvl == 54 || lvl == 56 || lvl == 60) && (s_particle_frame % 28 == 0)) {
+            float ex = VisualRand() * 256.0f;
+            SpawnParticle(ex, 220.0f, (VisualRand() - 0.5f) * 0.4f, -0.8f - VisualRand() * 0.5f,
+                          1.2f, 255, 120 + (uint8_t)(VisualRand() * 60), 30, 200, 1.5f);
+        }
+
+        s_prev_action = action;
+        s_prev_yspeed = yspeed;
     }
 
     const size_t size = (size_t)width * height * 4;
@@ -293,11 +379,38 @@ int YoshiComposeFrame(uint8_t *dst, size_t pitch, const uint8_t *field,
         s_bright = next; s_bright_capacity = size;
     }
 
-    /* Extract genuine high-luminance sources for localized bloom */
+    /* Extract genuine emissive sources (fire, lava, torches, stars, coins)
+     * while protecting reflective neutral whites (snow, clouds, UI text) from blown-out bloom */
     for (size_t i = 0; i < size; i += 4) {
         const unsigned b = field[i], g = field[i + 1], r = field[i + 2];
         const unsigned luminance = (54*r + 183*g + 19*b) >> 8;
-        const unsigned light = luminance > 208 ? (luminance - 208) * 255 / 47 : 0;
+
+        const int diff_rg = (int)r - (int)g;
+        const int diff_gb = (int)g - (int)b;
+        const int diff_rb = (int)r - (int)b;
+        const int chroma = (diff_rg < 0 ? -diff_rg : diff_rg) +
+                           (diff_gb < 0 ? -diff_gb : diff_gb) +
+                           (diff_rb < 0 ? -diff_rb : diff_rb);
+
+        unsigned light = 0;
+        // Warm flame / lava / fire / lantern glow: high red, lower blue
+        if (r > 195 && r > (b + 35) && luminance > 135) {
+            light = (r - 180) * 255 / 75;
+        }
+        // Golden stars / coins / yellow magic: high red & green, low blue
+        else if (r > 200 && g > 170 && b < 140) {
+            light = (luminance > 175) ? (luminance - 175) * 255 / 80 : 0;
+        }
+        // Magical energy / saturated luminous effects: high chroma + high luminance
+        else if (chroma > 45 && luminance > 190) {
+            light = (luminance - 190) * 255 / 65;
+        }
+        // For neutral whites (clouds, snow, sprites): only subtle specular threshold above 250
+        else if (luminance > 250) {
+            light = (luminance - 250) * 255 / 25;
+        }
+
+        if (light > 255) light = 255;
         s_bright[i] = (uint8_t)(b * light / 255);
         s_bright[i + 1] = (uint8_t)(g * light / 255);
         s_bright[i + 2] = (uint8_t)(r * light / 255);
@@ -341,7 +454,8 @@ bool YoshiRenderPresentation(SDL_Renderer *renderer, SDL_Texture *texture,
     bool has_pillars = false;
     if (!getenv("SNESRECOMP_NO_THEMED_FALLBACK") && s_backdrop_ready &&
         snesrecomp_sdl_get_render_output_size(renderer, &out_w, &out_h)) {
-        if (destination->x > 0 || (destination->x + destination->w) < out_w) {
+        if (destination->x > 0 || (destination->x + destination->w) < out_w ||
+            destination->y > 0 || (destination->y + destination->h) < out_h) {
             has_pillars = true;
         }
     }
@@ -429,6 +543,34 @@ bool YoshiRenderPresentation(SDL_Renderer *renderer, SDL_Texture *texture,
             if (lighting) s_applied |= 2;
         }
     }
+    /* Render active contextual presentation particles */
+    for (int i = 0; i < MAX_VISUAL_PARTICLES; ++i) {
+        if (s_particles[i].active) {
+            VisualParticle *p = &s_particles[i];
+            p->x += p->vx;
+            p->y += p->vy;
+            p->life -= 0.016667f;
+            if (p->life <= 0.0f) {
+                p->active = false;
+                continue;
+            }
+            float alpha_frac = p->life / p->max_life;
+            uint8_t cur_a = (uint8_t)(p->a * alpha_frac);
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            SDL_SetRenderDrawColor(renderer, p->r, p->g, p->b, cur_a);
+            float screen_x = destination->x + (p->x / 256.0f) * destination->w;
+            float screen_y = destination->y + (p->y / 224.0f) * destination->h;
+            float p_size = p->size * px;
+#if SNESRECOMP_SDL3
+            SDL_FRect pr = {screen_x - p_size * 0.5f, screen_y - p_size * 0.5f, p_size, p_size};
+            SDL_RenderFillRect(renderer, &pr);
+#else
+            SDL_Rect pr = {(int)(screen_x - p_size * 0.5f), (int)(screen_y - p_size * 0.5f), (int)p_size, (int)p_size};
+            SDL_RenderFillRect(renderer, &pr);
+#endif
+        }
+    }
+
     Mod(texture, 255, 255, 255);
     SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE);
     return true;
@@ -442,6 +584,7 @@ void YoshiPresentationReset(void) {
     s_backdrop_ready = false;
     free(s_bright); s_bright = NULL; s_bright_capacity = 0;
     s_bright_ready = false;
+    for (int i = 0; i < MAX_VISUAL_PARTICLES; ++i) s_particles[i].active = false;
 }
 
 #if SNESRECOMP_SDL3

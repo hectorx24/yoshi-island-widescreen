@@ -138,6 +138,31 @@ public final class YoshiActivity extends SDLActivity {
             params.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
             getWindow().setAttributes(params);
         }
+        // Request 120 Hz display refresh rate when supported (presentation only, keeping 60 Hz SNES simulation)
+        if (android.os.Build.VERSION.SDK_INT >= 23) {
+            try {
+                android.view.Display display = (android.os.Build.VERSION.SDK_INT >= 30) ? getDisplay() : getWindowManager().getDefaultDisplay();
+                if (display != null) {
+                    android.view.Display.Mode[] modes = display.getSupportedModes();
+                    android.view.Display.Mode best120 = null;
+                    if (modes != null) {
+                        for (android.view.Display.Mode m : modes) {
+                            if (Math.round(m.getRefreshRate()) >= 119) {
+                                if (best120 == null || m.getRefreshRate() > best120.getRefreshRate()) {
+                                    best120 = m;
+                                }
+                            }
+                        }
+                    }
+                    WindowManager.LayoutParams params = getWindow().getAttributes();
+                    if (best120 != null) {
+                        params.preferredDisplayModeId = best120.getModeId();
+                    }
+                    params.preferredRefreshRate = 120.0f;
+                    getWindow().setAttributes(params);
+                }
+            } catch (Throwable ignored) {}
+        }
         if (android.os.Build.VERSION.SDK_INT >= 30) {
             View content = findViewById(android.R.id.content);
             content.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {

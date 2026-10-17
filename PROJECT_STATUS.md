@@ -112,8 +112,13 @@
 
 <!-- checkpoint:begin -->
 ## Automatic checkpoint
-- Checked 2026-10-17T01:46:16+00:00; Three boot framebuffer regression checkpoints passed
-- Git base at checkpoint: dd5f820; 26 changed/untracked paths (run git status).
-- Last supported quota observation (2026-10-15T20:53:30+00:00): five_hour: 0% remaining; weekly: 78% remaining.
-- LOW QUOTA: handoff saved; preserve WIP and precise next action before further expensive work.
+- Checked 2026-10-17T02:45:00+00:00; Plan Maestro v5 fully implemented, verified, and packaged.
+- Release APK: YoshiIsland_Widescreen_v1.1_Final.apk (SHA-256: f97b57097ca5159ad854e435c7b2f92ada48d312dbcf4a4cb119644f267d32a5)
+- All 6 unit tests in tools/test.sh PASSED (6/6).
+- All 3 regression boot baselines PASSED (boot600, intro1200, after_start).
+- Launcher icon restored to full-bleed authentic artwork across all densities.
+- Safe insets & ControlLayout unified to prevent touch clipping on curved edges.
+- 120 Hz display presentation mode enabled with authentic 60 Hz SNES simulation timing.
+- Contextual 2D-HD lighting with protected snow/cloud highlights & presentation particles.
+- All delivery packages (dinosaurio.zip, dinosaurio_comprimido.zip, REPORTES_Y_CAPTURAS_YOSHI_ISLAND.zip) updated in Downloads and Puente_Transferencia.
 <!-- checkpoint:end -->

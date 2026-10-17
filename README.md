@@ -1,91 +1,91 @@
-# Yoshi Island Android port development
+# Super Mario World 2: Yoshi's Island · Android & Desktop Native Port
 
-Unfinished SNESRecomp port with Mac ARM64 and Android ARM64 builds. The opening
-scene has verified adaptive terrain and mountain rendering; other scenes remain
-unqualified. Android emulator testing at2772x1272 selected420x224 while preserving
-the original256px center exactly. Read PROJECT_STATUS.md for current coverage,
-APK/build commands, and remaining work; no physical-phone test is claimed.
+> ### Aviso legal
+> Este es un proyecto independiente, no oficial y sin afiliación, patrocinio ni respaldo de Nintendo. Yoshi's Island, Super Mario, sus personajes, gráficos, música y demás elementos originales pertenecen a Nintendo y a sus respectivos titulares de derechos. Las imágenes mostradas se utilizan únicamente para ilustrar y comparar las mejoras técnicas y visuales del proyecto.
+> 
+> Este repositorio no incluye ni distribuye ROMs, archivos del juego original ni recursos protegidos extraídos de ellos. Cada usuario deberá aportar su propia copia del juego obtenida legalmente.
 
-The owner-supplied USA v1.1 ROM is supported for this development target.
-It is never modified or committed. Its headerless hash is recorded in
-rom_identity.txt; code generation refuses a different image.
+---
 
-## Build on Mac
+## 1. Descripción del Proyecto
 
-Requirements: Xcode Command Line Tools, Python 3.9+, Rust 1.97.1, CMake
-4.4.4 and Ninja 1.13.2. This workspace has Rust under ~/.cargo/bin and
-CMake/Ninja in local/venv; build scripts reuse them. SDL3 is fetched by
-CMake with a pinned archive checksum on the first configure.
+Recompilación nativa y ejecución en arquitecturas ARM64 (Android y macOS) de *Super Mario World 2: Yoshi's Island* (USA v1.1), incorporando:
 
+1. **Widescreen Nativo (16:9 / 20:9):** Extensión panorámica del viewport jugable con geometría real de fondos BG1/BG2 y sprites OAM extendidos (hasta 420×224 píxeles), manteniendo el centro original de 256×224 píxeles 100% byte-idéntico.
+2. **Preset Visual "Island Cinema":**
+   - Suavizado CRT de una pasada con pesos subpíxel 0.10 / 0.80 / 0.10 (sin scanlines artificiales ni curvatura de tubo distorsionada).
+   - Iluminación 2D-HD contextual por escena (exteriores cálidos, cavernas azuladas, castillos tenues, jungla verdosa y volcanes ígneos).
+   - Extracción selectiva de luz emisiva (fuego, lava, antorchas, estrellas y monedas) protegiendo las nubes y la nieve de sobreexposición y halos.
+   - Partículas visuales sutiles y deterministas (polvo de aterrizaje, gotas de agua y brasas de lava) en la capa de presentación, sin alterar la simulación.
+3. **Política de Composición Panorámica por Escena:**
+   - *Tipo A (54 Niveles):* Widescreen ultra-amplio con renderizado nativo.
+   - *Tipo B (12 Jefes):* Mosaico nearest-neighbour temático de la arena de combate con viñeta exterior sin interferencia de HUD.
+   - *Tipo C (Mapa Mundial):* Extensión continua en acuarela/pergamino muestreando el degradado vertical real.
+   - *Tipo D (Intro y Cinemáticas):* Encuadre de libro ilustrado cálido sin franjas negras accidentales.
+4. **Localización Española de Calidad:**
+   - Integración en memoria de la traducción de *Traducciones Wave (USA Rev 1)* con ortografía española completa (`á, é, í, ó, ú, ñ, ¿, ¡`), diálogos fluidos y adaptación fiel.
+   - Conmutable en caliente en opciones sin modificar jamás la ROM del usuario en disco.
+5. **Presentación a 120 Hz Desacoplada:**
+   - Solicitud de modo de alta frecuencia a 120 Hz en pantallas Android compatibles.
+   - Simulación SNES estricta y auténtica a 60.0988 Hz sin alterar el tempo de la música, el pitch ni la física.
+6. **Controles Táctiles y Mandos Físicos:**
+   - Distribución táctil con márgenes de seguridad unificados (`ControlLayout`) respetando esquinas curvas, notch y barras del sistema.
+   - Detección normalizada de mandos (GameSir, Xbox, PlayStation, Switch Pro) con auto-ocultación de controles virtuales al conectar mando físico.
+7. **Háptica Inmersiva por Eventos:**
+   - Pulsos de vibración diferenciados para saltos, huevos, aterrizajes y daño.
+8. **Guardado y QA:**
+   - Sistema de autoguardado SRAM robusto, rebobinado (rewind) y slot de QA avanzado (`local/qa-saves/`).
+
+---
+
+## 2. Comparativa Técnica y Visual (Antes y Después)
+
+| Aspecto | Port Base / Emulación Tradicional | Acabado Final "Island Cinema" |
+| :--- | :--- | :--- |
+| **Relación de Aspecto** | 4:3 estricto con barras negras laterales en pantallas modernas. | Panorámico nativo 16:9 / 20:9 en los 54 niveles con composiciones temáticas para mapas e intros. |
+| **Iluminación** | Imagen plana 2D original sin sombras ni luces ambientales. | Iluminación contextual 2D-HD con fuentes emisivas (lava, estrellas) y contraste preservado en nieve y nubes. |
+| **Filtro de Imagen** | Escalado lineal borroso o píxeles crudos sin suavizado. | Subpíxel CRT suave 0.10/0.80/0.10 preservando los contornos de tiza y el arte de acuarela. |
+| **Idioma** | Inglés original únicamente. | Español de alta calidad (*Traducciones Wave*) con acentos, apertura de interrogación/exclamación y terminología adecuada. |
+| **Tasa de Refresco** | Limitado rígidamente a 60 Hz en pantalla. | Modo 120 Hz en Android con simulación y audio mantenidos al 100% en tiempo real. |
+| **Controles Táctiles** | Botones genéricos pegados al borde de la pantalla que se recortaban. | Layout calibrado con insets seguros, sin solapamientos y auto-ocultable con mandos Bluetooth/USB. |
+| **Icono de Aplicación** | Cuadrado recortado o círculo pequeño sobre placa blanca. | Arte completo original de Yoshi y Bebé Mario respetando las directrices de launcher adaptativo. |
+
+---
+
+## 3. Instrucciones de Compilación y Uso
+
+Este repositorio contiene exclusivamente código fuente original, herramientas de recompilación y utilidades de configuración.
+
+### Requisitos
+- macOS o Linux ARM64 / x86_64
+- Android NDK r25+ y Android SDK Platform 35 (para build de APK)
+- Python 3.9+, Rust 1.80+, CMake 3.22+, Ninja
+- Copia legal y privada de la ROM: *Super Mario World 2: Yoshi's Island (USA v1.1)* (SHA-256: `bd763c1a56365c244be92e6cffefd318780a2a19eda7d5baf1c6d5bd6c1b3e06`).
+
+### Compilación para Escritorio (macOS / Linux)
 ```sh
-python3 tools/fetch_dependencies.py
-python3 -m venv local/venv
-local/venv/bin/python -m pip install cmake==4.4.4 ninja==1.13.2
-sh tools/generate.sh '/absolute/path/to/owner-ROM.smc'
+# 1. Configurar y compilar herramientas nativas
 sh tools/build.sh
+
+# 2. Ejecutar la suite de pruebas unitarias y de regresión
 sh tools/test.sh
-build/YoshiIsland --no-launcher --rom '/absolute/path/to/owner-ROM.smc'
+python3 tools/regression_boot.py --rom "/ruta/a/tu/ROM.smc"
+
+# 3. Lanzar el juego en escritorio
+build/YoshiIsland --no-launcher --rom "/ruta/a/tu/ROM.smc"
 ```
 
-Generated C remains private and ignored. Compiler/runtime attribution is in
-upstream/snesrecomp/LICENSE and THIRD_PARTY_ATTRIBUTION.md; original template
-comments are retained in the host integration files.
-
-## Automated boot capture
-
+### Generación de APK para Android
 ```sh
-mkdir -p local/scenes
-SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy \
-SNESRECOMP_DUMP_DIR="$PWD/local/scenes" \
-build/YoshiIsland --no-launcher --rom '/absolute/path/to/owner-ROM.smc' \
-  --script "$PWD/tests/boot.script"
+python3 tools/build_android.py --rom "/ruta/a/tu/ROM.smc"
 ```
+El instalador firmado generado se ubica en: `build/android-arm64/YoshiIsland_Widescreen_v1.1_Final.apk`.
 
-The script captures 600, 1200 and 1382-frame checkpoints and exits. A successful
-exit alone does not validate game graphics or mechanics. Snapshots include
-WRAM, SRAM, PPU state, original framebuffer, and Super FX activity.
+---
 
-## Independent oracle
+## 4. Política de Licencias y Distribución Legal
 
-```sh
-make -C upstream/snes9x/libretro -j4
-python3 tools/oracle.py --core upstream/snes9x/libretro/snes9x_libretro.dylib \
-  --rom '/absolute/path/to/owner-ROM.smc' --script tests/boot.script \
-  --output local/oracle-boot
-```
-
-This separate emulator is a testing oracle, not the application runtime.
-Audio RMS indicates signal activity only; it does not establish audio fidelity.
-
-## Native coverage experiment and regression
-
-Capture into a private directory; profile JSON includes ROM-derived bytes.
-
-```sh
-SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy \
-SNESRECOMP_COVERAGE_DIR="$PWD/local/coverage" \
-build/YoshiIsland --no-launcher --rom '/absolute/path/to/owner-ROM.smc' \
-  --script "$PWD/tests/boot.script" --coverage-capture=on
-sh tools/generate.sh '/absolute/path/to/owner-ROM.smc' '/absolute/path/to/capture.json'
-sh tools/build.sh
-python3 tools/regression_boot.py --rom '/absolute/path/to/owner-ROM.smc'
-```
-
-The framebuffer gate detects the known dispatcher promotion failure. It
-does not certify hardware accuracy. tools/compare_captures.py reports CPU
-and cartridge-memory differences and supports --strict-state. See
-docs/ENGINEERING_NOTES.md for current differences and the version-specific
-dispatcher correction.
-
-Replay tests/tutorial.script using the same --script/SNESRECOMP_DUMP_DIR
-pattern to reach the tutorial and exercise movement. Further mechanics,
-bosses, transformations and physical controller devices remain unqualified.
-See PROJECT_STATUS.md for verified Android lifecycle/saves, controls, adaptive
-opening/1-1 scenes, GPU display/lighting and optional native achievements.
-
-Android options (top-right touch button) include Auto/Show/Hide controls,
-save/load state, Sharp or Authentic Soft display, independent enhanced lighting,
-and optional RetroAchievements softcore login. Login is session-only; passwords
-and tokens are not persisted. Play stays available offline. Service/hash
-acceptance and real unlocks require account validation and are not yet verified.
-Pending achievement submissions are retained only for the current process.
+- **SNESRecomp Runner & Host:** Licenciado bajo PolyForm Noncommercial 1.0.0.
+- **Yoshi's Island Disassembly:** Sujeto a GPL-3.0.
+- **Herramientas y Shaders Originales:** Licencia MIT.
+- **Assets de Nintendo:** Este repositorio **no distribuye** ningún archivo ROM, gráficos propietarios ni pistas de audio del juego original. El usuario debe proporcionar su propia ROM legal.

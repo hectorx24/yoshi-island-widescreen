@@ -40,7 +40,7 @@ if (log_dir / 'transcript_full.jsonl').exists():
     shutil.copy2(log_dir / 'transcript_full.jsonl', ag_dir / 'transcript_full.jsonl')
 
 print("4. Copying master plan and root markdown files...", flush=True)
-for doc_file in ['MASTER_PLAN_ANTIGRAVITY.md', 'PLAN_MAESTRO_YOSHI_ISLAND_DEFINITIVO_V4.md', 'PROJECT_STATUS.md', 'BUGS.md', 'ARCHITECTURAL_DESIGN_AND_TECHNICAL_SPEC.md']:
+for doc_file in ['MASTER_PLAN_ANTIGRAVITY.md', 'PLAN_MAESTRO_YOSHI_ISLAND_DEFINITIVO_V4.md', 'PLAN_MAESTRO_YOSHI_ISLAND_DEFINITIVO_V5.md', 'PROJECT_STATUS.md', 'BUGS.md', 'ARCHITECTURAL_DESIGN_AND_TECHNICAL_SPEC.md', 'README.md']:
     if (root / doc_file).exists():
         shutil.copy2(root / doc_file, staging / doc_file)
 

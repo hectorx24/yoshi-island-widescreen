@@ -34,7 +34,7 @@ if source_dinosaurio.exists():
                 pass
 
 print("2. Copying executive summaries and master plans...", flush=True)
-for fname in ['RESUMEN_EJECUTIVO_CHATGPT.md', 'MASTER_PLAN_ANTIGRAVITY.md', 'PLAN_MAESTRO_YOSHI_ISLAND_DEFINITIVO_V4.md', 'PROJECT_STATUS.md', 'BUGS.md']:
+for fname in ['RESUMEN_EJECUTIVO_CHATGPT.md', 'MASTER_PLAN_ANTIGRAVITY.md', 'PLAN_MAESTRO_YOSHI_ISLAND_DEFINITIVO_V4.md', 'PLAN_MAESTRO_YOSHI_ISLAND_DEFINITIVO_V5.md', 'PROJECT_STATUS.md', 'BUGS.md', 'README.md']:
     p = root / fname
     if p.exists():
         shutil.copy2(p, staging / fname)

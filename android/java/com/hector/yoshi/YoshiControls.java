@@ -64,15 +64,45 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
     @Override public void onInputDeviceRemoved(int id) { refreshController(); }
     @Override public void onInputDeviceChanged(int id) { refreshController(); }
 
+    static final class ControlLayout {
+        float dpadCx, dpadCy, dpadRadius;
+        float btnB_x, btnB_y;
+        float btnA_x, btnA_y;
+        float btnY_x, btnY_y;
+        float btnX_x, btnX_y;
+        float btnL_x, btnL_y;
+        float btnR_x, btnR_y;
+        float btnSel_x, btnSel_y;
+        float btnStart_x, btnStart_y;
+        float actionRadius, shoulderRadius, middleRadius;
+        float menuX, menuY, menuRadius;
+    }
+
     private void refreshController() {
         boolean gamepad = false;
         for (int id : InputDevice.getDeviceIds()) {
             InputDevice d = InputDevice.getDevice(id);
-            if (d == null) continue;
+            if (d == null || d.isVirtual()) continue;
             int sources = d.getSources();
             if ((sources & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD ||
                 (sources & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK) {
-                gamepad = true;
+                try {
+                    boolean[] hasKeys = d.hasKeys(new int[]{
+                        KeyEvent.KEYCODE_BUTTON_A,
+                        KeyEvent.KEYCODE_BUTTON_B,
+                        KeyEvent.KEYCODE_BUTTON_START
+                    });
+                    if (hasKeys[0] || hasKeys[1] || hasKeys[2] ||
+                        (sources & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD) {
+                        gamepad = true;
+                        break;
+                    }
+                } catch (Throwable t) {
+                    if ((sources & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD) {
+                        gamepad = true;
+                        break;
+                    }
+                }
             }
         }
         visible = mode == 1 || (mode == 0 && !gamepad);
@@ -94,22 +124,59 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
         return Math.min(usableH / 448f, usableW / 800f);
     }
 
-    private float[][] buttons() {
+    private ControlLayout computeLayout() {
+        ControlLayout l = new ControlLayout();
         float s = scale();
         float pl = getPaddingLeft(), pr = getPaddingRight();
         float pt = getPaddingTop(), pb = getPaddingBottom();
-        float w = getWidth() - pr, h = getHeight() - pb;
-        float midX = pl + (getWidth() - pl - pr) / 2f;
-        return new float[][] {
-            {w - 84*s, h - 54*s, KeyEvent.KEYCODE_Z},           // B salto
-            {w - 38*s, h - 100*s, KeyEvent.KEYCODE_X},          // A huevo
-            {w - 130*s, h - 100*s, KeyEvent.KEYCODE_A},         // Y lengua
-            {w - 84*s, h - 146*s, KeyEvent.KEYCODE_S},          // X
-            {midX - 42*s, h - 25*s, KeyEvent.KEYCODE_SHIFT_RIGHT}, // Select
-            {midX + 42*s, h - 25*s, KeyEvent.KEYCODE_ENTER},       // Start
-            {pl + 40*s, pt + 36*s, KeyEvent.KEYCODE_C},         // L
-            {w - 90*s, pt + 36*s, KeyEvent.KEYCODE_V}           // R
-        };
+        float w = getWidth(), h = getHeight();
+
+        // Safe margins prevent controls from touching screen edges, rounded corners, or camera cutouts
+        float safeX = Math.max(22f * s, 18f);
+        float safeY = Math.max(18f * s, 14f);
+
+        // D-Pad placement
+        l.dpadRadius = 22f * s;
+        float dpadSpacing = 34f * s;
+        l.dpadCx = pl + safeX + dpadSpacing + l.dpadRadius;
+        l.dpadCy = h - pb - safeY - dpadSpacing - l.dpadRadius;
+
+        // Action buttons diamond (B, A, Y, X)
+        l.actionRadius = 22f * s;
+        float actionSpacing = 36f * s;
+        float clusterCx = w - pr - safeX - actionSpacing - l.actionRadius;
+        float clusterCy = h - pb - safeY - actionSpacing - l.actionRadius;
+
+        l.btnB_x = clusterCx;
+        l.btnB_y = clusterCy + actionSpacing;
+        l.btnA_x = clusterCx + actionSpacing;
+        l.btnA_y = clusterCy;
+        l.btnY_x = clusterCx - actionSpacing;
+        l.btnY_y = clusterCy;
+        l.btnX_x = clusterCx;
+        l.btnX_y = clusterCy - actionSpacing;
+
+        // Shoulder buttons L / R
+        l.shoulderRadius = 20f * s;
+        l.btnL_x = pl + safeX + 32f * s;
+        l.btnL_y = pt + safeY + 22f * s;
+        l.btnR_x = w - pr - safeX - 32f * s;
+        l.btnR_y = pt + safeY + 22f * s;
+
+        // Middle buttons (Select / Start)
+        l.middleRadius = 18f * s;
+        float midX = pl + (w - pl - pr) / 2f;
+        l.btnSel_x = midX - 44f * s;
+        l.btnSel_y = h - pb - safeY - 16f * s;
+        l.btnStart_x = midX + 44f * s;
+        l.btnStart_y = h - pb - safeY - 16f * s;
+
+        // Top-right pause menu button
+        l.menuRadius = 18f * s;
+        l.menuX = w - pr - safeX - 12f * s;
+        l.menuY = pt + safeY + 22f * s;
+
+        return l;
     }
 
     private boolean near(float x, float y, float cx, float cy, float radius) {
@@ -119,17 +186,22 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
 
     private void keysAt(float x, float y, Set<Integer> keys) {
         if (!visible) return;
-        float s = scale(), pl = getPaddingLeft(), pb = getPaddingBottom();
-        float cx = pl + 76*s, cy = getHeight() - pb - 80*s;
-        if (near(x, y, cx, cy, 58*s)) {
-            if (x < cx - 12*s) keys.add(KeyEvent.KEYCODE_DPAD_LEFT);
-            if (x > cx + 12*s) keys.add(KeyEvent.KEYCODE_DPAD_RIGHT);
-            if (y < cy - 12*s) keys.add(KeyEvent.KEYCODE_DPAD_UP);
-            if (y > cy + 12*s) keys.add(KeyEvent.KEYCODE_DPAD_DOWN);
+        float s = scale();
+        ControlLayout l = computeLayout();
+        if (near(x, y, l.dpadCx, l.dpadCy, 58f * s)) {
+            if (x < l.dpadCx - 10f * s) keys.add(KeyEvent.KEYCODE_DPAD_LEFT);
+            if (x > l.dpadCx + 10f * s) keys.add(KeyEvent.KEYCODE_DPAD_RIGHT);
+            if (y < l.dpadCy - 10f * s) keys.add(KeyEvent.KEYCODE_DPAD_UP);
+            if (y > l.dpadCy + 10f * s) keys.add(KeyEvent.KEYCODE_DPAD_DOWN);
         }
-        for (float[] b : buttons()) {
-            if (near(x, y, b[0], b[1], 23*s)) keys.add((int)b[2]);
-        }
+        if (near(x, y, l.btnB_x, l.btnB_y, l.actionRadius * 1.15f)) keys.add(KeyEvent.KEYCODE_Z);
+        if (near(x, y, l.btnA_x, l.btnA_y, l.actionRadius * 1.15f)) keys.add(KeyEvent.KEYCODE_X);
+        if (near(x, y, l.btnY_x, l.btnY_y, l.actionRadius * 1.15f)) keys.add(KeyEvent.KEYCODE_A);
+        if (near(x, y, l.btnX_x, l.btnX_y, l.actionRadius * 1.15f)) keys.add(KeyEvent.KEYCODE_S);
+        if (near(x, y, l.btnSel_x, l.btnSel_y, l.middleRadius * 1.15f)) keys.add(KeyEvent.KEYCODE_SHIFT_RIGHT);
+        if (near(x, y, l.btnStart_x, l.btnStart_y, l.middleRadius * 1.15f)) keys.add(KeyEvent.KEYCODE_ENTER);
+        if (near(x, y, l.btnL_x, l.btnL_y, l.shoulderRadius * 1.15f)) keys.add(KeyEvent.KEYCODE_C);
+        if (near(x, y, l.btnR_x, l.btnR_y, l.shoulderRadius * 1.15f)) keys.add(KeyEvent.KEYCODE_V);
     }
 
     private String getTouchModeDescription() {
@@ -374,11 +446,10 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
     }
 
     @Override public boolean onTouchEvent(MotionEvent event) {
-        float s = scale();
-        float pr = getPaddingRight(), pt = getPaddingTop();
+        ControlLayout l = computeLayout();
         // Menu button touch area in top-right with safe insets
         if (event.getActionMasked() == MotionEvent.ACTION_DOWN &&
-            near(event.getX(), event.getY(), getWidth() - pr - 26*s, pt + 24*s, 24*s)) {
+            near(event.getX(), event.getY(), l.menuX, l.menuY, l.menuRadius * 1.35f)) {
             options();
             return true;
         }
@@ -432,10 +503,10 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
         canvas.drawText(label, x, y - (paint.ascent() + paint.descent())/2, paint);
     }
 
-    private void drawMenuButton(Canvas canvas, float s, float pr, float pt) {
-        float bx = getWidth() - pr - 26*s;
-        float by = pt + 24*s;
-        float radius = 17*s;
+    private void drawMenuButton(Canvas canvas, ControlLayout l, float s) {
+        float bx = l.menuX;
+        float by = l.menuY;
+        float radius = l.menuRadius;
 
         // Soft green disc
         paint.setStyle(Paint.Style.FILL);
@@ -461,20 +532,28 @@ final class YoshiControls extends View implements InputManager.InputDeviceListen
 
     @Override protected void onDraw(Canvas canvas) {
         float s = scale();
-        float pl = getPaddingLeft(), pr = getPaddingRight();
-        float pt = getPaddingTop(), pb = getPaddingBottom();
+        ControlLayout l = computeLayout();
         if (visible) {
-            String[] names = {"B", "A", "Y", "X", "Select", "Start", "L", "R"};
-            float[][] bs = buttons();
-            for (int i = 0; i < bs.length; ++i) {
-                circle(canvas, bs[i][0], bs[i][1], (i < 4 ? 22 : 20)*s, names[i], (int)bs[i][2]);
-            }
-            float x = pl + 76*s, y = getHeight() - pb - 80*s;
-            circle(canvas, x - 34*s, y, 22*s, "<", KeyEvent.KEYCODE_DPAD_LEFT);
-            circle(canvas, x + 34*s, y, 22*s, ">", KeyEvent.KEYCODE_DPAD_RIGHT);
-            circle(canvas, x, y - 34*s, 22*s, "^", KeyEvent.KEYCODE_DPAD_UP);
-            circle(canvas, x, y + 34*s, 22*s, "v", KeyEvent.KEYCODE_DPAD_DOWN);
+            // Action buttons
+            circle(canvas, l.btnB_x, l.btnB_y, l.actionRadius, "B", KeyEvent.KEYCODE_Z);
+            circle(canvas, l.btnA_x, l.btnA_y, l.actionRadius, "A", KeyEvent.KEYCODE_X);
+            circle(canvas, l.btnY_x, l.btnY_y, l.actionRadius, "Y", KeyEvent.KEYCODE_A);
+            circle(canvas, l.btnX_x, l.btnX_y, l.actionRadius, "X", KeyEvent.KEYCODE_S);
+
+            // Middle buttons
+            circle(canvas, l.btnSel_x, l.btnSel_y, l.middleRadius, "Select", KeyEvent.KEYCODE_SHIFT_RIGHT);
+            circle(canvas, l.btnStart_x, l.btnStart_y, l.middleRadius, "Start", KeyEvent.KEYCODE_ENTER);
+
+            // Shoulder buttons
+            circle(canvas, l.btnL_x, l.btnL_y, l.shoulderRadius, "L", KeyEvent.KEYCODE_C);
+            circle(canvas, l.btnR_x, l.btnR_y, l.shoulderRadius, "R", KeyEvent.KEYCODE_V);
+
+            // D-Pad arrows
+            circle(canvas, l.dpadCx - 34f * s, l.dpadCy, l.dpadRadius, "<", KeyEvent.KEYCODE_DPAD_LEFT);
+            circle(canvas, l.dpadCx + 34f * s, l.dpadCy, l.dpadRadius, ">", KeyEvent.KEYCODE_DPAD_RIGHT);
+            circle(canvas, l.dpadCx, l.dpadCy - 34f * s, l.dpadRadius, "^", KeyEvent.KEYCODE_DPAD_UP);
+            circle(canvas, l.dpadCx, l.dpadCy + 34f * s, l.dpadRadius, "v", KeyEvent.KEYCODE_DPAD_DOWN);
         }
-        drawMenuButton(canvas, s, pr, pt);
+        drawMenuButton(canvas, l, s);
     }
 }
